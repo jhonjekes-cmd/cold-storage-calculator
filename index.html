@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冷库冷量计算软件 - Cold Storage Heat Load Calculator</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>❄️ 冷库冷量计算软件</h1>
+            <p class="subtitle">专业冷库热负荷计算 · 制冷设备选型参考</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="basic">基本信息</button>
+            <button class="tab-btn" data-tab="envelope">围护结构</button>
+            <button class="tab-btn" data-tab="goods">货物负荷</button>
+            <button class="tab-btn" data-tab="ventilation">通风换气</button>
+            <button class="tab-btn" data-tab="operation">操作管理</button>
+            <button class="tab-btn" data-tab="motor">电机热负荷</button>
+            <button class="tab-btn" data-tab="result">计算结果</button>
+        </div>
+
+        <!-- 基本信息 -->
+        <div class="tab-content active" id="tab-basic">
+            <div class="card">
+                <h2>库房基本信息</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>库房名称</label>
+                        <input type="text" id="roomName" value="1#冷藏库" placeholder="输入库房名称">
+                    </div>
+                    <div class="form-group">
+                        <label>库房类型</label>
+                        <select id="roomType">
+                            <option value="cooling">冷藏库（0℃以上）</option>
+                            <option value="freezing">冷冻库（-18℃）</option>
+                            <option value="deepfreeze">速冻库（-30℃以下）</option>
+                            <option value="constant">恒温库</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>库内设计温度 (℃)</label>
+                        <input type="number" id="indoorTemp" value="-18" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>夏季空调室外计算温度 (℃)</label>
+                        <input type="number" id="outdoorTemp" value="35" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>室外计算相对湿度 (%)</label>
+                        <input type="number" id="outdoorHumidity" value="80" step="1" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label>库内相对湿度 (%)</label>
+                        <input type="number" id="indoorHumidity" value="85" step="1" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label>库房长度 (m)</label>
+                        <input type="number" id="roomLength" value="20" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>库房宽度 (m)</label>
+                        <input type="number" id="roomWidth" value="10" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>库房高度 (m)</label>
+                        <input type="number" id="roomHeight" value="6" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>安全系数 (%)</label>
+                        <input type="number" id="safetyFactor" value="10" step="1" min="0" max="50">
+                        <small>通常取 5%~15%</small>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <p><strong>库房容积：</strong><span id="roomVolume">1200</span> m³</p>
+                    <p><strong>库房总面积（六面）：</strong><span id="totalArea">760</span> m²</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 围护结构 -->
+        <div class="tab-content" id="tab-envelope">
+            <div class="card">
+                <h2>围护结构传热负荷计算</h2>
+                <p class="desc">计算公式：Q₁ = K × F × Δt × α （α为温度修正系数）</p>
+                
+                <div class="envelope-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>部位</th>
+                                <th>面积 (m²)</th>
+                                <th>传热系数K<br>[W/(m²·K)]</th>
+                                <th>两侧温差 (K)</th>
+                                <th>修正系数α</th>
+                                <th>传热量 (W)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="envelopeBody">
+                            <!-- 动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="form-grid" style="margin-top: 20px;">
+                    <div class="form-group">
+                        <label>屋顶/顶棚传热系数 K [W/(m²·K)]</label>
+                        <input type="number" id="roofK" value="0.35" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>外墙传热系数 K [W/(m²·K)]</label>
+                        <input type="number" id="wallK" value="0.40" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>地板传热系数 K [W/(m²·K)]</label>
+                        <input type="number" id="floorK" value="0.45" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>隔墙传热系数 K [W/(m²·K)]</label>
+                        <input type="number" id="partitionK" value="0.40" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>邻室温度 (℃)（如有隔墙）</label>
+                        <input type="number" id="adjacentTemp" value="0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>太阳辐射热修正（屋顶）</label>
+                        <select id="solarFactor">
+                            <option value="1.0">无（室内/顶棚）</option>
+                            <option value="1.2">轻度日照</option>
+                            <option value="1.3" selected>中度日照（推荐）</option>
+                            <option value="1.4">强烈日照</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="result-summary">
+                    <h3>围护结构总传热负荷：<span id="envelopeTotal">0</span> W = <span id="envelopeTotalKW">0</span> kW</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 货物负荷 -->
+        <div class="tab-content" id="tab-goods">
+            <div class="card">
+                <h2>货物冷负荷计算</h2>
+                <p class="desc">包含货物冷却、冻结潜热、包装材料及运载工具的热量</p>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>每日进货量 (kg/d)</label>
+                        <input type="number" id="goodsMass" value="5000" step="100" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>货物进货温度 (℃)</label>
+                        <input type="number" id="goodsInTemp" value="0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>货物终温 (℃)</label>
+                        <input type="number" id="goodsOutTemp" value="-18" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>货物冻结点温度 (℃)</label>
+                        <input type="number" id="freezePoint" value="-1.5" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>冻结前比热容 [kJ/(kg·K)]</label>
+                        <input type="number" id="cpAbove" value="3.2" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>冻结后比热容 [kJ/(kg·K)]</label>
+                        <input type="number" id="cpBelow" value="1.7" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>货物潜热 (kJ/kg)</label>
+                        <input type="number" id="latentHeat" value="250" step="1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>货物冷却时间 (h)</label>
+                        <input type="number" id="coolingTime" value="24" step="1" min="1">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 25px;">包装及运载工具</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>包装材料质量 (kg/d)</label>
+                        <input type="number" id="packMass" value="500" step="10" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>包装比热容 [kJ/(kg·K)]</label>
+                        <input type="number" id="packCp" value="1.5" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>包装初始温度 (℃)</label>
+                        <input type="number" id="packTemp" value="35" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>运载工具质量 (kg/次)</label>
+                        <input type="number" id="containerMass" value="0" step="10" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>运载工具比热容 [kJ/(kg·K)]</label>
+                        <input type="number" id="containerCp" value="0.5" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>每日进货次数</label>
+                        <input type="number" id="containerTimes" value="0" step="1" min="0">
+                    </div>
+                </div>
+
+                <div class="result-summary">
+                    <h3>货物总冷负荷：<span id="goodsTotal">0</span> W = <span id="goodsTotalKW">0</span> kW</h3>
+                    <div class="breakdown">
+                        <p>货物显热（冷却）：<span id="goodsSensible">0</span> W</p>
+                        <p>货物潜热（冻结）：<span id="goodsLatent">0</span> W</p>
+                        <p>包装材料冷负荷：<span id="packLoad">0</span> W</p>
+                        <p>运载工具冷负荷：<span id="containerLoad">0</span> W</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 通风换气 -->
+        <div class="tab-content" id="tab-ventilation">
+            <div class="card">
+                <h2>通风换气冷负荷计算</h2>
+                <p class="desc">计算公式：Q₃ = n·V·ρ·(h_w - h_n) / 3600</p>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>换气次数 (次/日)</label>
+                        <input type="number" id="airChanges" value="2" step="0.5" min="0">
+                        <small>冷藏库2~4次，冷冻库1~2次</small>
+                    </div>
+                    <div class="form-group">
+                        <label>空气密度 (kg/m³)</label>
+                        <input type="number" id="airDensity" value="1.2" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>每日开门通风时间 (h)</label>
+                        <input type="number" id="ventTime" value="2" step="0.5" min="0">
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>焓值参考（自动计算）</h4>
+                    <p>室外空气焓值 h_w：<span id="outdoorEnthalpy">0</span> kJ/kg（干空气）</p>
+                    <p>室内空气焓值 h_n：<span id="indoorEnthalpy">0</span> kJ/kg（干空气）</p>
+                    <p>焓差 Δh：<span id="enthalpyDiff">0</span> kJ/kg</p>
+                </div>
+
+                <div class="result-summary">
+                    <h3>通风换气总冷负荷：<span id="ventTotal">0</span> W = <span id="ventTotalKW">0</span> kW</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作管理 -->
+        <div class="tab-content" id="tab-operation">
+            <div class="card">
+                <h2>操作管理冷负荷</h2>
+                
+                <h3>人员散热</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>库内工作人员数量 (人)</label>
+                        <input type="number" id="personCount" value="2" step="1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>每人散热量 (W/人)</label>
+                        <input type="number" id="personHeat" value="280" step="10" min="0">
+                        <small>轻度劳动280W，中度劳动420W</small>
+                    </div>
+                    <div class="form-group">
+                        <label>人员每日在库时间 (h)</label>
+                        <input type="number" id="personTime" value="4" step="0.5" min="0">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px;">照明散热</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>照明功率密度 (W/m²)</label>
+                        <input type="number" id="lightingDensity" value="5" step="0.5" min="0">
+                        <small>一般冷库3~5 W/m²</small>
+                    </div>
+                    <div class="form-group">
+                        <label>每日照明时间 (h)</label>
+                        <input type="number" id="lightingTime" value="8" step="0.5" min="0">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px;">设备散热</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>库内设备总功率 (kW)</label>
+                        <input type="number" id="equipmentPower" value="1.5" step="0.1" min="0">
+                        <small>如叉车、分拣设备等</small>
+                    </div>
+                    <div class="form-group">
+                        <label>设备同时使用系数</label>
+                        <input type="number" id="equipmentDiversity" value="0.5" step="0.1" min="0" max="1">
+                    </div>
+                    <div class="form-group">
+                        <label>设备每日运行时间 (h)</label>
+                        <input type="number" id="equipmentTime" value="4" step="0.5" min="0">
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px;">开门热负荷</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>冷库门面积 (m²)</label>
+                        <input type="number" id="doorArea" value="4" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>每日开门次数 (次)</label>
+                        <input type="number" id="doorOpens" value="20" step="1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>每次开门时间 (s)</label>
+                        <input type="number" id="doorDuration" value="60" step="5" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>门洞传热系数 [W/(m²·K)]</label>
+                        <input type="number" id="doorK" value="15" step="1" min="0">
+                    </div>
+                </div>
+
+                <div class="result-summary">
+                    <h3>操作管理总冷负荷：<span id="operationTotal">0</span> W = <span id="operationTotalKW">0</span> kW</h3>
+                    <div class="breakdown">
+                        <p>人员散热：<span id="personTotal">0</span> W</p>
+                        <p>照明散热：<span id="lightingTotal">0</span> W</p>
+                        <p>设备散热：<span id="equipmentTotal">0</span> W</p>
+                        <p>开门热负荷：<span id="doorTotal">0</span> W</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 电机热负荷 -->
+        <div class="tab-content" id="tab-motor">
+            <div class="card">
+                <h2>电机运行热负荷</h2>
+                <p class="desc">库内风机、电机等设备运行时产生的热量</p>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>冷风机电机总功率 (kW)</label>
+                        <input type="number" id="fanMotorPower" value="2.2" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>电机热转化系数</label>
+                        <input type="number" id="motorEfficiency" value="0.8" step="0.05" min="0" max="1">
+                        <small>电机在库内取0.7~0.85</small>
+                    </div>
+                    <div class="form-group">
+                        <label>每日运行时间 (h)</label>
+                        <input type="number" id="motorTime" value="18" step="0.5" min="0" max="24">
+                    </div>
+                    <div class="form-group">
+                        <label>其他库内电机功率 (kW)</label>
+                        <input type="number" id="otherMotorPower" value="0" step="0.1" min="0">
+                    </div>
+                </div>
+
+                <div class="result-summary">
+                    <h3>电机总热负荷：<span id="motorTotal">0</span> W = <span id="motorTotalKW">0</span> kW</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- 计算结果 -->
+        <div class="tab-content" id="tab-result">
+            <div class="card">
+                <h2>📊 冷量计算结果汇总</h2>
+                
+                <div class="result-main">
+                    <div class="result-item">
+                        <span class="result-label">① 围护结构传热负荷</span>
+                        <span class="result-value"><span id="r1">0</span> kW</span>
+                        <span class="result-percent" id="r1p">0%</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">② 货物冷负荷</span>
+                        <span class="result-value"><span id="r2">0</span> kW</span>
+                        <span class="result-percent" id="r2p">0%</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">③ 通风换气冷负荷</span>
+                        <span class="result-value"><span id="r3">0</span> kW</span>
+                        <span class="result-percent" id="r3p">0%</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">④ 操作管理冷负荷</span>
+                        <span class="result-value"><span id="r4">0</span> kW</span>
+                        <span class="result-percent" id="r4p">0%</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">⑤ 电机运行热负荷</span>
+                        <span class="result-value"><span id="r5">0</span> kW</span>
+                        <span class="result-percent" id="r5p">0%</span>
+                    </div>
+                    <hr>
+                    <div class="result-item total">
+                        <span class="result-label">计算总冷负荷</span>
+                        <span class="result-value"><span id="rTotal">0</span> kW</span>
+                        <span class="result-percent">100%</span>
+                    </div>
+                    <div class="result-item grand-total">
+                        <span class="result-label">设计冷量（含安全系数）</span>
+                        <span class="result-value"><span id="rDesign">0</span> kW</span>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>负荷构成比例</h3>
+                    <div class="bar-chart" id="barChart">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+
+                <div class="selection-box">
+                    <h3>🔧 制冷设备选型参考</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>蒸发温度 (℃)</label>
+                            <input type="number" id="evapTemp" value="-25" step="1">
+                            <small>通常比库温低7~10℃</small>
+                        </div>
+                        <div class="form-group">
+                            <label>冷凝温度 (℃)</label>
+                            <input type="number" id="condTemp" value="40" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label>制冷系数 COP（参考）</label>
+                            <input type="number" id="copValue" value="2.5" step="0.1" min="0">
+                        </div>
+                    </div>
+                    <div class="info-box">
+                        <p><strong>所需压缩机轴功率：</strong><span id="compressorPower">0</span> kW</p>
+                        <p><strong>建议配置制冷量：</strong><span id="suggestedCapacity">0</span> kW</p>
+                        <p><strong>冷风机建议配置：</strong><span id="fanSuggestion">0</span> kW（按1.2倍余量）</p>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="exportReport()">📄 导出计算报告</button>
+                    <button class="btn btn-secondary" onclick="printResult()">🖨️ 打印结果</button>
+                    <button class="btn btn-secondary" onclick="resetAll()">🔄 重置参数</button>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>冷库冷量计算软件 v1.0 | 依据《冷库设计标准》GB 50072 相关公式编制</p>
+            <p class="disclaimer">本软件计算结果仅供参考，实际工程设计请由专业制冷工程师审核确认。</p>
+        </footer>
+    </div>
+
+    <script src="js/calculator.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

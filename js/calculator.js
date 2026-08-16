@@ -5,6 +5,50 @@
 
 const ColdStorageCalculator = {
     /**
+     * 保温材料导热系数表 [W/(m·K)]
+     */
+    MATERIAL_LAMBDA: {
+        pu: 0.023,           // 双面彩钢聚氨酯板（PU）
+        pir: 0.022,          // 双面彩钢聚氨酯板（PIR）
+        eps: 0.040,          // 双面彩钢聚苯板（EPS）
+        xps: 0.030,          // 挤塑聚苯板（XPS）
+        rockwool: 0.040,     // 岩棉夹芯板
+        stainless_steel: 0.023 // 不锈钢聚氨酯板
+    },
+
+    /**
+     * 材料中文名称映射
+     */
+    MATERIAL_NAMES: {
+        pu: '聚氨酯板(PU)',
+        pir: '聚氨酯板(PIR)',
+        eps: '聚苯板(EPS)',
+        xps: '挤塑板(XPS)',
+        rockwool: '岩棉板',
+        stainless_steel: '不锈钢聚氨酯板',
+        custom: '自定义'
+    },
+
+    /**
+     * 根据保温材料和厚度计算传热系数K
+     * K = 1 / (δ/λ + Rsi + Rso)
+     * Rsi = 0.11 m²·K/W (内表面换热阻)
+     * Rso = 0.04 m²·K/W (外表面换热阻)
+     * @param {string} material - 材料类型
+     * @param {number} thickness - 厚度 mm
+     * @param {number} customLambda - 自定义导热系数（material=custom时使用）
+     * @returns {number} K值 W/(m²·K)
+     */
+    calculateKValue(material, thickness, customLambda = 0.023) {
+        const lambda = material === 'custom' ? customLambda : (this.MATERIAL_LAMBDA[material] || 0.023);
+        const delta = thickness / 1000; // mm -> m
+        const Rsi = 0.11;
+        const Rso = 0.04;
+        const totalResistance = delta / lambda + Rsi + Rso;
+        return 1 / totalResistance;
+    },
+
+    /**
      * 计算湿空气焓值
      * h = 1.005*t + d*(2501 + 1.86*t)  kJ/kg干空气
      * @param {number} temp - 温度 ℃
@@ -26,39 +70,40 @@ const ColdStorageCalculator = {
     /**
      * 围护结构传热负荷计算
      * Q1 = K * F * Δt * α
+     * 支持各部位独立保温材料、厚度和修正系数
      */
     calculateEnvelope(params) {
         const {
             roomLength, roomWidth, roomHeight,
-            indoorTemp, outdoorTemp, adjacentTemp,
+            indoorTemp, outdoorTemp,
             roofK, wallK, floorK, partitionK,
-            solarFactor
+            roofAlpha, wallAlpha, floorAlpha,
+            partitionArea, adjacentTemp
         } = params;
 
         // 各部位面积
         const roofArea = roomLength * roomWidth;
         const floorArea = roomLength * roomWidth;
         const wallArea = 2 * (roomLength + roomWidth) * roomHeight;
-        // 假设一面隔墙（可扩展）
-        const partitionArea = 0;
+        const partArea = partitionArea || 0;
 
         // 温差
         const outdoorDelta = outdoorTemp - indoorTemp;
-        const adjacentDelta = adjacentTemp - indoorTemp;
+        const adjacentDelta = Math.max(0, (adjacentTemp || 0) - indoorTemp);
 
         // 各部位传热量
-        const roofLoad = roofK * roofArea * outdoorDelta * solarFactor;
-        const wallLoad = wallK * wallArea * outdoorDelta * 1.0;
-        const floorLoad = floorK * floorArea * outdoorDelta * 0.5; // 地板取半温差修正
-        const partitionLoad = partitionK * partitionArea * Math.max(0, adjacentDelta) * 1.0;
+        const roofLoad = roofK * roofArea * outdoorDelta * (roofAlpha || 1.3);
+        const wallLoad = wallK * wallArea * outdoorDelta * (wallAlpha || 1.0);
+        const floorLoad = floorK * floorArea * outdoorDelta * (floorAlpha || 0.5);
+        const partitionLoad = partitionK * partArea * adjacentDelta * 1.0;
 
         const total = roofLoad + wallLoad + floorLoad + partitionLoad;
 
         return {
-            roof: { area: roofArea, k: roofK, delta: outdoorDelta, alpha: solarFactor, load: roofLoad },
-            wall: { area: wallArea, k: wallK, delta: outdoorDelta, alpha: 1.0, load: wallLoad },
-            floor: { area: floorArea, k: floorK, delta: outdoorDelta * 0.5, alpha: 1.0, load: floorLoad },
-            partition: { area: partitionArea, k: partitionK, delta: Math.max(0, adjacentDelta), alpha: 1.0, load: partitionLoad },
+            roof: { area: roofArea, k: roofK, delta: outdoorDelta, alpha: roofAlpha || 1.3, load: roofLoad },
+            wall: { area: wallArea, k: wallK, delta: outdoorDelta, alpha: wallAlpha || 1.0, load: wallLoad },
+            floor: { area: floorArea, k: floorK, delta: outdoorDelta * (floorAlpha || 0.5), alpha: floorAlpha || 0.5, load: floorLoad },
+            partition: { area: partArea, k: partitionK, delta: adjacentDelta, alpha: 1.0, load: partitionLoad },
             total: total
         };
     },

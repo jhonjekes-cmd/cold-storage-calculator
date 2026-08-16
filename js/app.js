@@ -1,5 +1,6 @@
 /**
- * 冷库冷量计算软件 - 界面交互逻辑
+ * 冷库冷量计算软件 v1.1 - 界面交互逻辑
+ * 青岛冷锋节能工程有限公司
  */
 
 // DOM 元素缓存
@@ -11,24 +12,41 @@ document.addEventListener('DOMContentLoaded', function() {
     initTabs();
     initEventListeners();
     updateRoomInfo();
+    updateAllKValues();
+    updatePresetK();
     calculateAll();
 });
 
 // 初始化元素引用
 function initElements() {
     const ids = [
+        // 基本信息
         'roomName', 'roomType', 'indoorTemp', 'outdoorTemp', 'outdoorHumidity', 'indoorHumidity',
         'roomLength', 'roomWidth', 'roomHeight', 'safetyFactor',
-        'roofK', 'wallK', 'floorK', 'partitionK', 'adjacentTemp', 'solarFactor',
+        // 围护结构 - 预设
+        'presetMaterial', 'presetThickness', 'presetK',
+        // 围护结构 - 屋顶
+        'roofMaterial', 'roofThickness', 'roofK', 'roofAlpha', 'roofArea',
+        // 围护结构 - 外墙
+        'wallMaterial', 'wallThickness', 'wallK', 'wallAlpha', 'wallArea',
+        // 围护结构 - 地板
+        'floorMaterial', 'floorThickness', 'floorK', 'floorType', 'floorAreaDisplay',
+        // 围护结构 - 隔墙
+        'partitionAreaInput', 'partitionMaterial', 'partitionThickness', 'partitionK', 'adjacentTemp',
+        // 货物负荷
         'goodsMass', 'goodsInTemp', 'goodsOutTemp', 'freezePoint',
         'cpAbove', 'cpBelow', 'latentHeat', 'coolingTime',
         'packMass', 'packCp', 'packTemp', 'containerMass', 'containerCp', 'containerTimes',
+        // 通风换气
         'airChanges', 'airDensity', 'ventTime',
+        // 操作管理
         'personCount', 'personHeat', 'personTime',
         'lightingDensity', 'lightingTime',
         'equipmentPower', 'equipmentDiversity', 'equipmentTime',
         'doorArea', 'doorOpens', 'doorDuration', 'doorK',
+        // 电机热负荷
         'fanMotorPower', 'motorEfficiency', 'motorTime', 'otherMotorPower',
+        // 设备选型
         'evapTemp', 'condTemp', 'copValue'
     ];
     ids.forEach(id => {
@@ -73,6 +91,97 @@ function initEventListeners() {
     elements.roomType.addEventListener('change', function() {
         applyRoomTypePreset(this.value);
     });
+
+    // 保温材料和厚度变化时自动计算K值
+    const materialSelects = document.querySelectorAll('.material-select');
+    const thicknessSelects = document.querySelectorAll('.thickness-select');
+
+    materialSelects.forEach(sel => {
+        sel.addEventListener('change', function() {
+            const part = this.id.replace('Material', '');
+            updatePartKValue(part);
+            calculateAll();
+        });
+    });
+
+    thicknessSelects.forEach(sel => {
+        sel.addEventListener('change', function() {
+            const part = this.id.replace('Thickness', '');
+            updatePartKValue(part);
+            calculateAll();
+        });
+    });
+
+    // 预设区域变化时更新预览
+    elements.presetMaterial.addEventListener('change', updatePresetK);
+    elements.presetThickness.addEventListener('change', updatePresetK);
+}
+
+/**
+ * 更新单个部位的K值（根据材料和厚度自动计算）
+ */
+function updatePartKValue(part) {
+    const materialEl = document.getElementById(part + 'Material');
+    const thicknessEl = document.getElementById(part + 'Thickness');
+    const kEl = document.getElementById(part + 'K');
+
+    if (!materialEl || !thicknessEl || !kEl) return;
+
+    const material = materialEl.value;
+    const thickness = parseFloat(thicknessEl.value);
+
+    if (material !== 'custom') {
+        const k = ColdStorageCalculator.calculateKValue(material, thickness);
+        kEl.value = k.toFixed(3);
+    }
+}
+
+/**
+ * 更新所有部位的K值
+ */
+function updateAllKValues() {
+    ['roof', 'wall', 'floor', 'partition'].forEach(part => {
+        updatePartKValue(part);
+    });
+}
+
+/**
+ * 更新预设区域的K值预览
+ */
+function updatePresetK() {
+    const material = elements.presetMaterial.value;
+    const thickness = parseFloat(elements.presetThickness.value);
+    const k = ColdStorageCalculator.calculateKValue(material, thickness);
+    elements.presetK.textContent = k.toFixed(3);
+}
+
+/**
+ * 一键应用保温材料和厚度到所有部位
+ */
+function applyPresetToAll() {
+    const material = elements.presetMaterial.value;
+    const thickness = elements.presetThickness.value;
+
+    ['roof', 'wall', 'floor', 'partition'].forEach(part => {
+        const materialEl = document.getElementById(part + 'Material');
+        const thicknessEl = document.getElementById(part + 'Thickness');
+        if (materialEl) materialEl.value = material;
+        if (thicknessEl) thicknessEl.value = thickness;
+        updatePartKValue(part);
+    });
+
+    updatePresetK();
+    calculateAll();
+
+    // 视觉反馈
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.textContent = '✓ 已应用到所有部位';
+    btn.style.background = 'linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%)';
+    setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+    }, 1500);
 }
 
 // 库房类型预设
@@ -84,6 +193,8 @@ function applyRoomTypePreset(type) {
             elements.cpBelow.value = 1.8;
             elements.latentHeat.value = 0;
             elements.freezePoint.value = -1;
+            // 保温预设：100mm 聚氨酯板
+            setEnvelopePreset('pu', '100');
             break;
         case 'freezing':
             elements.indoorTemp.value = -18;
@@ -91,6 +202,8 @@ function applyRoomTypePreset(type) {
             elements.cpBelow.value = 1.7;
             elements.latentHeat.value = 250;
             elements.freezePoint.value = -1.5;
+            // 保温预设：100mm 聚氨酯板
+            setEnvelopePreset('pu', '100');
             break;
         case 'deepfreeze':
             elements.indoorTemp.value = -30;
@@ -98,6 +211,8 @@ function applyRoomTypePreset(type) {
             elements.cpBelow.value = 1.6;
             elements.latentHeat.value = 250;
             elements.freezePoint.value = -1.5;
+            // 保温预设：150mm 聚氨酯板
+            setEnvelopePreset('pu', '150');
             break;
         case 'constant':
             elements.indoorTemp.value = 5;
@@ -105,9 +220,27 @@ function applyRoomTypePreset(type) {
             elements.cpBelow.value = 1.8;
             elements.latentHeat.value = 0;
             elements.freezePoint.value = 0;
+            // 保温预设：75mm 聚氨酯板
+            setEnvelopePreset('pu', '75');
             break;
     }
+    updateAllKValues();
     calculateAll();
+}
+
+/**
+ * 设置围护结构保温材料预设（应用到所有部位）
+ */
+function setEnvelopePreset(material, thickness) {
+    elements.presetMaterial.value = material;
+    elements.presetThickness.value = thickness;
+    ['roof', 'wall', 'floor', 'partition'].forEach(part => {
+        const mEl = document.getElementById(part + 'Material');
+        const tEl = document.getElementById(part + 'Thickness');
+        if (mEl && mEl.value !== 'custom') mEl.value = material;
+        if (tEl) tEl.value = thickness;
+    });
+    updatePresetK();
 }
 
 // 获取所有参数
@@ -127,13 +260,28 @@ function getParams() {
         roomHeight: getVal('roomHeight'),
         safetyFactor: getVal('safetyFactor'),
 
+        // 围护结构
         roofK: getVal('roofK'),
         wallK: getVal('wallK'),
         floorK: getVal('floorK'),
         partitionK: getVal('partitionK'),
+        roofAlpha: getVal('roofAlpha'),
+        wallAlpha: getVal('wallAlpha'),
+        floorAlpha: getVal('floorType'),
+        partitionArea: getVal('partitionAreaInput'),
         adjacentTemp: getVal('adjacentTemp'),
-        solarFactor: getVal('solarFactor'),
 
+        // 保温材料信息（用于报告导出）
+        roofMaterial: getStr('roofMaterial'),
+        roofThickness: getVal('roofThickness'),
+        wallMaterial: getStr('wallMaterial'),
+        wallThickness: getVal('wallThickness'),
+        floorMaterial: getStr('floorMaterial'),
+        floorThickness: getVal('floorThickness'),
+        partitionMaterial: getStr('partitionMaterial'),
+        partitionThickness: getVal('partitionThickness'),
+
+        // 货物负荷
         goodsMass: getVal('goodsMass'),
         goodsInTemp: getVal('goodsInTemp'),
         goodsOutTemp: getVal('goodsOutTemp'),
@@ -149,10 +297,12 @@ function getParams() {
         containerCp: getVal('containerCp'),
         containerTimes: getVal('containerTimes'),
 
+        // 通风换气
         airChanges: getVal('airChanges'),
         airDensity: getVal('airDensity'),
         ventTime: getVal('ventTime'),
 
+        // 操作管理
         personCount: getVal('personCount'),
         personHeat: getVal('personHeat'),
         personTime: getVal('personTime'),
@@ -166,18 +316,20 @@ function getParams() {
         doorDuration: getVal('doorDuration'),
         doorK: getVal('doorK'),
 
+        // 电机热负荷
         fanMotorPower: getVal('fanMotorPower'),
         motorEfficiency: getVal('motorEfficiency'),
         motorTime: getVal('motorTime'),
         otherMotorPower: getVal('otherMotorPower'),
 
+        // 设备选型
         evapTemp: getVal('evapTemp'),
         condTemp: getVal('condTemp'),
         copValue: getVal('copValue')
     };
 }
 
-// 更新库房基本信息
+// 更新库房基本信息和各部位面积
 function updateRoomInfo() {
     const L = parseFloat(elements.roomLength.value) || 0;
     const W = parseFloat(elements.roomWidth.value) || 0;
@@ -185,31 +337,67 @@ function updateRoomInfo() {
 
     const volume = L * W * H;
     const totalArea = 2 * (L * W + L * H + W * H);
+    const roofArea = L * W;
+    const wallArea = 2 * (L + W) * H;
 
     document.getElementById('roomVolume').textContent = volume.toFixed(1);
     document.getElementById('totalArea').textContent = totalArea.toFixed(1);
+
+    // 更新各部位面积显示
+    if (elements.roofArea) elements.roofArea.textContent = roofArea.toFixed(2);
+    if (elements.wallArea) elements.wallArea.textContent = wallArea.toFixed(2);
+    if (elements.floorAreaDisplay) elements.floorAreaDisplay.textContent = roofArea.toFixed(2);
+
+    const partArea = parseFloat(elements.partitionAreaInput?.value) || 0;
+    const partSpan = document.querySelector('#tab-envelope .config-row:nth-child(4) .config-area span');
+    if (partSpan) partSpan.textContent = partArea.toFixed(2);
 }
 
 // 更新围护结构表格
-function updateEnvelopeTable(envelope) {
+function updateEnvelopeTable(envelope, params) {
     const tbody = document.getElementById('envelopeBody');
     const rows = [
-        { name: '屋顶/顶棚', data: envelope.roof },
-        { name: '外墙（四面）', data: envelope.wall },
-        { name: '地板', data: envelope.floor },
-        { name: '隔墙', data: envelope.partition }
+        {
+            name: '屋顶/顶棚',
+            data: envelope.roof,
+            material: params?.roofMaterial || 'pu',
+            thickness: params?.roofThickness || 100
+        },
+        {
+            name: '外墙（四面）',
+            data: envelope.wall,
+            material: params?.wallMaterial || 'pu',
+            thickness: params?.wallThickness || 100
+        },
+        {
+            name: '地板',
+            data: envelope.floor,
+            material: params?.floorMaterial || 'pu',
+            thickness: params?.floorThickness || 100
+        },
+        {
+            name: '隔墙',
+            data: envelope.partition,
+            material: params?.partitionMaterial || 'pu',
+            thickness: params?.partitionThickness || 100
+        }
     ];
 
-    tbody.innerHTML = rows.map(row => `
+    tbody.innerHTML = rows.map(row => {
+        const matName = ColdStorageCalculator.MATERIAL_NAMES[row.material] || row.material;
+        const displayThickness = row.data.area > 0 ? row.thickness : '-';
+        return `
         <tr>
             <td>${row.name}</td>
             <td>${row.data.area.toFixed(2)}</td>
+            <td>${matName}</td>
+            <td>${displayThickness}</td>
             <td>${row.data.k.toFixed(3)}</td>
             <td>${row.data.delta.toFixed(1)}</td>
             <td>${row.data.alpha.toFixed(2)}</td>
             <td><strong>${row.data.load.toFixed(1)}</strong></td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 // 格式化数字
@@ -224,7 +412,7 @@ function calculateAll() {
     const selection = ColdStorageCalculator.calculateSelection(result, params);
 
     // 围护结构
-    updateEnvelopeTable(result.envelope);
+    updateEnvelopeTable(result.envelope, params);
     document.getElementById('envelopeTotal').textContent = fmt(result.envelope.total);
     document.getElementById('envelopeTotalKW').textContent = fmt(result.envelope.total / 1000, 2);
 
@@ -324,13 +512,17 @@ function exportReport() {
     const { params, result, selection } = data;
     const date = new Date().toLocaleString('zh-CN');
 
+    const getMatName = (key) => ColdStorageCalculator.MATERIAL_NAMES[params[key]] || params[key];
+
     const report = `
 ═══════════════════════════════════════════
+        青岛冷锋节能工程有限公司
            冷库冷量计算报告
 ═══════════════════════════════════════════
 生成时间：${date}
 库房名称：${params.roomName}
 库房类型：${getRoomTypeName(params.roomType)}
+联系电话：13061468618（微信同号）
 
 一、库房基本参数
 ───────────────────────────────────────────
@@ -340,12 +532,28 @@ function exportReport() {
   室外温度：${params.outdoorTemp}℃
   安全系数：${params.safetyFactor}%
 
-二、各项冷负荷计算
+二、围护结构保温配置
+───────────────────────────────────────────
+  屋顶/顶棚：${getMatName('roofMaterial')} ${params.roofThickness}mm
+             K=${params.roofK.toFixed(3)} W/(m²·K)
+             面积=${result.envelope.roof.area.toFixed(2)}m²
+  外墙：    ${getMatName('wallMaterial')} ${params.wallThickness}mm
+             K=${params.wallK.toFixed(3)} W/(m²·K)
+             面积=${result.envelope.wall.area.toFixed(2)}m²
+  地板：    ${getMatName('floorMaterial')} ${params.floorThickness}mm
+             K=${params.floorK.toFixed(3)} W/(m²·K)
+             面积=${result.envelope.floor.area.toFixed(2)}m²
+  ${params.partitionArea > 0 ? `隔墙：    ${getMatName('partitionMaterial')} ${params.partitionThickness}mm
+             K=${params.partitionK.toFixed(3)} W/(m²·K)
+             面积=${result.envelope.partition.area.toFixed(2)}m²` : '隔墙：    无'}
+
+三、各项冷负荷计算
 ───────────────────────────────────────────
   ① 围护结构传热负荷：${(result.envelope.total/1000).toFixed(2)} kW
      - 屋顶：${(result.envelope.roof.load/1000).toFixed(2)} kW
      - 外墙：${(result.envelope.wall.load/1000).toFixed(2)} kW
      - 地板：${(result.envelope.floor.load/1000).toFixed(2)} kW
+     ${params.partitionArea > 0 ? `- 隔墙：${(result.envelope.partition.load/1000).toFixed(2)} kW` : ''}
 
   ② 货物冷负荷：${(result.goods.total/1000).toFixed(2)} kW
      - 货物显热：${(result.goods.sensible/1000).toFixed(2)} kW
@@ -362,12 +570,12 @@ function exportReport() {
 
   ⑤ 电机运行热负荷：${(result.motor.total/1000).toFixed(2)} kW
 
-三、冷量汇总
+四、冷量汇总
 ───────────────────────────────────────────
   计算总冷负荷：${result.totalKW.toFixed(2)} kW
   设计冷量（含${params.safetyFactor}%安全系数）：${result.designKW.toFixed(2)} kW
 
-四、制冷设备选型参考
+五、制冷设备选型参考
 ───────────────────────────────────────────
   蒸发温度：${selection.evapTemp}℃
   冷凝温度：${selection.condTemp}℃
@@ -377,6 +585,10 @@ function exportReport() {
   冷风机建议配置：${selection.fanCapacity.toFixed(2)} kW
 
 ═══════════════════════════════════════════
+  青岛冷锋节能工程有限公司
+  电话/微信：13061468618
+  专业冷库设计 · 安装 · 节能改造
+───────────────────────────────────────────
   本报告由冷库冷量计算软件自动生成
   计算结果仅供参考，实际工程请由专业
   制冷工程师审核确认。

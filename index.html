@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>冷库冷量计算软件 - Cold Storage Heat Load Calculator</title>
+    <title>冷库冷量计算软件 - 青岛冷锋节能工程有限公司</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -36,7 +36,7 @@
                         <label>库房类型</label>
                         <select id="roomType">
                             <option value="cooling">冷藏库（0℃以上）</option>
-                            <option value="freezing">冷冻库（-18℃）</option>
+                            <option value="freezing" selected>冷冻库（-18℃）</option>
                             <option value="deepfreeze">速冻库（-30℃以下）</option>
                             <option value="constant">恒温库</option>
                             <option value="custom">自定义</option>
@@ -87,60 +87,270 @@
         <div class="tab-content" id="tab-envelope">
             <div class="card">
                 <h2>围护结构传热负荷计算</h2>
-                <p class="desc">计算公式：Q₁ = K × F × Δt × α （α为温度修正系数）</p>
-                
-                <div class="envelope-table">
+                <p class="desc">计算公式：Q₁ = K × F × Δt × α ｜ K = 1 / (δ/λ + R<sub>si</sub> + R<sub>so</sub>)</p>
+
+                <!-- 统一设置 -->
+                <div class="preset-box">
+                    <h3>🔧 保温材料统一设置</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>保温板材类型</label>
+                            <select id="presetMaterial">
+                                <option value="pu">双面彩钢聚氨酯板（PU）λ=0.023</option>
+                                <option value="pir">双面彩钢聚氨酯板（PIR）λ=0.022</option>
+                                <option value="eps">双面彩钢聚苯板（EPS）λ=0.040</option>
+                                <option value="xps">挤塑聚苯板（XPS）λ=0.030</option>
+                                <option value="rockwool">岩棉夹芯板 λ=0.040</option>
+                                <option value="stainless_steel">不锈钢聚氨酯板 λ=0.023</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>保温层厚度</label>
+                            <select id="presetThickness">
+                                <option value="50">50 mm</option>
+                                <option value="75">75 mm</option>
+                                <option value="100" selected>100 mm</option>
+                                <option value="120">120 mm</option>
+                                <option value="150">150 mm</option>
+                                <option value="175">175 mm</option>
+                                <option value="200">200 mm</option>
+                                <option value="250">250 mm</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button class="btn btn-primary" onclick="applyPresetToAll()" style="width: 100%;">一键应用到所有部位</button>
+                        </div>
+                    </div>
+                    <div class="k-preview">
+                        <span>当前配置理论传热系数 K = <strong id="presetK">0.225</strong> W/(m²·K)</span>
+                    </div>
+                </div>
+
+                <!-- 各部位详细配置 -->
+                <h3 style="margin-top: 25px;">各部位保温配置</h3>
+
+                <div class="envelope-config">
+                    <!-- 屋顶 -->
+                    <div class="config-row">
+                        <div class="config-header">
+                            <span class="config-title">🏠 屋顶/顶棚</span>
+                            <span class="config-area">面积：<span id="roofArea">200.00</span> m²</span>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>保温板材类型</label>
+                                <select id="roofMaterial" class="material-select">
+                                    <option value="pu">双面彩钢聚氨酯板（PU）</option>
+                                    <option value="pir">双面彩钢聚氨酯板（PIR）</option>
+                                    <option value="eps">双面彩钢聚苯板（EPS）</option>
+                                    <option value="xps">挤塑聚苯板（XPS）</option>
+                                    <option value="rockwool">岩棉夹芯板</option>
+                                    <option value="stainless_steel">不锈钢聚氨酯板</option>
+                                    <option value="custom">自定义</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>保温层厚度 (mm)</label>
+                                <select id="roofThickness" class="thickness-select">
+                                    <option value="50">50</option>
+                                    <option value="75">75</option>
+                                    <option value="100" selected>100</option>
+                                    <option value="120">120</option>
+                                    <option value="150">150</option>
+                                    <option value="175">175</option>
+                                    <option value="200">200</option>
+                                    <option value="250">250</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>传热系数 K [W/(m²·K)]</label>
+                                <input type="number" id="roofK" value="0.225" step="0.001" min="0">
+                                <small>自动计算，可手动微调</small>
+                            </div>
+                            <div class="form-group">
+                                <label>太阳辐射修正α</label>
+                                <select id="roofAlpha">
+                                    <option value="1.0">无（室内顶棚）</option>
+                                    <option value="1.2">轻度日照</option>
+                                    <option value="1.3" selected>中度日照（推荐）</option>
+                                    <option value="1.4">强烈日照</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 外墙 -->
+                    <div class="config-row">
+                        <div class="config-header">
+                            <span class="config-title">🧱 外墙（四面）</span>
+                            <span class="config-area">面积：<span id="wallArea">360.00</span> m²</span>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>保温板材类型</label>
+                                <select id="wallMaterial" class="material-select">
+                                    <option value="pu">双面彩钢聚氨酯板（PU）</option>
+                                    <option value="pir">双面彩钢聚氨酯板（PIR）</option>
+                                    <option value="eps">双面彩钢聚苯板（EPS）</option>
+                                    <option value="xps">挤塑聚苯板（XPS）</option>
+                                    <option value="rockwool">岩棉夹芯板</option>
+                                    <option value="stainless_steel">不锈钢聚氨酯板</option>
+                                    <option value="custom">自定义</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>保温层厚度 (mm)</label>
+                                <select id="wallThickness" class="thickness-select">
+                                    <option value="50">50</option>
+                                    <option value="75">75</option>
+                                    <option value="100" selected>100</option>
+                                    <option value="120">120</option>
+                                    <option value="150">150</option>
+                                    <option value="175">175</option>
+                                    <option value="200">200</option>
+                                    <option value="250">250</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>传热系数 K [W/(m²·K)]</label>
+                                <input type="number" id="wallK" value="0.225" step="0.001" min="0">
+                                <small>自动计算，可手动微调</small>
+                            </div>
+                            <div class="form-group">
+                                <label>修正系数α</label>
+                                <select id="wallAlpha">
+                                    <option value="1.0" selected>标准（无强日照）</option>
+                                    <option value="1.1">轻度日照</option>
+                                    <option value="1.2">中度日照</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 地板 -->
+                    <div class="config-row">
+                        <div class="config-header">
+                            <span class="config-title">⬇️ 地板</span>
+                            <span class="config-area">面积：<span id="floorAreaDisplay">200.00</span> m²</span>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>保温板材类型</label>
+                                <select id="floorMaterial" class="material-select">
+                                    <option value="pu">双面彩钢聚氨酯板（PU）</option>
+                                    <option value="pir">双面彩钢聚氨酯板（PIR）</option>
+                                    <option value="eps">双面彩钢聚苯板（EPS）</option>
+                                    <option value="xps">挤塑聚苯板（XPS）</option>
+                                    <option value="rockwool">岩棉夹芯板</option>
+                                    <option value="stainless_steel">不锈钢聚氨酯板</option>
+                                    <option value="custom">自定义</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>保温层厚度 (mm)</label>
+                                <select id="floorThickness" class="thickness-select">
+                                    <option value="50">50</option>
+                                    <option value="75">75</option>
+                                    <option value="100" selected>100</option>
+                                    <option value="120">120</option>
+                                    <option value="150">150</option>
+                                    <option value="175">175</option>
+                                    <option value="200">200</option>
+                                    <option value="250">250</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>传热系数 K [W/(m²·K)]</label>
+                                <input type="number" id="floorK" value="0.225" step="0.001" min="0">
+                                <small>自动计算，可手动微调</small>
+                            </div>
+                            <div class="form-group">
+                                <label>地板类型</label>
+                                <select id="floorType">
+                                    <option value="0.5" selected>架空地板（半温差）</option>
+                                    <option value="0.7">直接接触土壤</option>
+                                    <option value="1.0">下方为常温空间</option>
+                                    <option value="0.3">下方为加热空间</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 隔墙 -->
+                    <div class="config-row">
+                        <div class="config-header">
+                            <span class="config-title">🚪 隔墙（与邻室）</span>
+                            <span class="config-area">面积：<span id="partitionArea">0.00</span> m²（默认无）</span>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>隔墙面积 (m²)</label>
+                                <input type="number" id="partitionAreaInput" value="0" step="0.1" min="0">
+                                <small>有邻室时填写，无则为0</small>
+                            </div>
+                            <div class="form-group">
+                                <label>保温板材类型</label>
+                                <select id="partitionMaterial" class="material-select">
+                                    <option value="pu">双面彩钢聚氨酯板（PU）</option>
+                                    <option value="pir">双面彩钢聚氨酯板（PIR）</option>
+                                    <option value="eps">双面彩钢聚苯板（EPS）</option>
+                                    <option value="xps">挤塑聚苯板（XPS）</option>
+                                    <option value="rockwool">岩棉夹芯板</option>
+                                    <option value="stainless_steel">不锈钢聚氨酯板</option>
+                                    <option value="custom">自定义</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>保温层厚度 (mm)</label>
+                                <select id="partitionThickness" class="thickness-select">
+                                    <option value="50">50</option>
+                                    <option value="75">75</option>
+                                    <option value="100" selected>100</option>
+                                    <option value="120">120</option>
+                                    <option value="150">150</option>
+                                    <option value="175">175</option>
+                                    <option value="200">200</option>
+                                    <option value="250">250</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>传热系数 K [W/(m²·K)]</label>
+                                <input type="number" id="partitionK" value="0.225" step="0.001" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label>邻室温度 (℃)</label>
+                                <input type="number" id="adjacentTemp" value="0" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 计算结果表 -->
+                <div class="envelope-table" style="margin-top: 25px;">
+                    <h3>📊 围护结构传热计算结果</h3>
                     <table>
                         <thead>
                             <tr>
                                 <th>部位</th>
                                 <th>面积 (m²)</th>
-                                <th>传热系数K<br>[W/(m²·K)]</th>
-                                <th>两侧温差 (K)</th>
-                                <th>修正系数α</th>
+                                <th>保温材料</th>
+                                <th>厚度 (mm)</th>
+                                <th>K值<br>[W/(m²·K)]</th>
+                                <th>温差 (K)</th>
+                                <th>修正α</th>
                                 <th>传热量 (W)</th>
                             </tr>
                         </thead>
                         <tbody id="envelopeBody">
                             <!-- 动态生成 -->
                         </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="7"><strong>围护结构总传热负荷</strong></td>
+                                <td><strong id="envelopeTotal">0</strong> W<br><span id="envelopeTotalKW">0</span> kW</td>
+                            </tr>
+                        </tfoot>
                     </table>
-                </div>
-
-                <div class="form-grid" style="margin-top: 20px;">
-                    <div class="form-group">
-                        <label>屋顶/顶棚传热系数 K [W/(m²·K)]</label>
-                        <input type="number" id="roofK" value="0.35" step="0.01" min="0">
-                    </div>
-                    <div class="form-group">
-                        <label>外墙传热系数 K [W/(m²·K)]</label>
-                        <input type="number" id="wallK" value="0.40" step="0.01" min="0">
-                    </div>
-                    <div class="form-group">
-                        <label>地板传热系数 K [W/(m²·K)]</label>
-                        <input type="number" id="floorK" value="0.45" step="0.01" min="0">
-                    </div>
-                    <div class="form-group">
-                        <label>隔墙传热系数 K [W/(m²·K)]</label>
-                        <input type="number" id="partitionK" value="0.40" step="0.01" min="0">
-                    </div>
-                    <div class="form-group">
-                        <label>邻室温度 (℃)（如有隔墙）</label>
-                        <input type="number" id="adjacentTemp" value="0" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label>太阳辐射热修正（屋顶）</label>
-                        <select id="solarFactor">
-                            <option value="1.0">无（室内/顶棚）</option>
-                            <option value="1.2">轻度日照</option>
-                            <option value="1.3" selected>中度日照（推荐）</option>
-                            <option value="1.4">强烈日照</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="result-summary">
-                    <h3>围护结构总传热负荷：<span id="envelopeTotal">0</span> W = <span id="envelopeTotalKW">0</span> kW</h3>
                 </div>
             </div>
         </div>
@@ -460,8 +670,20 @@
         </div>
 
         <footer>
-            <p>冷库冷量计算软件 v1.0 | 依据《冷库设计标准》GB 50072 相关公式编制</p>
-            <p class="disclaimer">本软件计算结果仅供参考，实际工程设计请由专业制冷工程师审核确认。</p>
+            <div class="footer-content">
+                <div class="footer-company">
+                    <h3>青岛冷锋节能工程有限公司</h3>
+                    <p>专业冷库设计 · 安装 · 节能改造一站式服务</p>
+                </div>
+                <div class="footer-contact">
+                    <p>📞 电话/微信：<a href="tel:13061468618">13061468618</a></p>
+                    <p>📍 地址：山东省青岛市</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>冷库冷量计算软件 v1.1 | 依据《冷库设计标准》GB 50072 相关公式编制</p>
+                <p class="disclaimer">本软件计算结果仅供参考，实际工程设计请由专业制冷工程师审核确认。</p>
+            </div>
         </footer>
     </div>
 

@@ -16,6 +16,7 @@ Page({
       { key: 'motor', label: '电机负荷' },
       { key: 'result', label: '计算结果' }
     ],
+
     roomName: '1#冷冻库',
     roomType: 'freezing',
     roomTypeIndex: 1,
@@ -31,6 +32,7 @@ Page({
     safetyFactor: 10,
     roomVolume: 1200,
     totalArea: 760,
+
     presetMaterial: 'pu',
     presetMaterialIndex: 0,
     presetThickness: 100,
@@ -45,20 +47,28 @@ Page({
       { value: 'stainless_steel', label: '不锈钢聚氨酯板 λ=0.023' }
     ],
     thicknessOptions: [50, 75, 100, 120, 150, 175, 200, 250],
-    roofMaterial: 'pu', roofMaterialIndex: 0, roofThickness: 100, roofThicknessIndex: 2,
+
+    roofMaterial: 'pu', roofMaterialIndex: 0,
+    roofThickness: 100, roofThicknessIndex: 2,
     roofK: 0.225, roofAlpha: 1.3, roofAlphaIndex: 2,
     roofAlphaOptions: ['无（室内顶棚）', '轻度日照', '中度日照（推荐）', '强烈日照'],
     roofAlphaValues: [1.0, 1.2, 1.3, 1.4], roofArea: 200,
-    wallMaterial: 'pu', wallMaterialIndex: 0, wallThickness: 100, wallThicknessIndex: 2,
+
+    wallMaterial: 'pu', wallMaterialIndex: 0,
+    wallThickness: 100, wallThicknessIndex: 2,
     wallK: 0.225, wallAlpha: 1.0, wallAlphaIndex: 0,
     wallAlphaOptions: ['标准（无强日照）', '轻度日照', '中度日照'],
     wallAlphaValues: [1.0, 1.1, 1.2], wallArea: 360,
-    floorMaterial: 'pu', floorMaterialIndex: 0, floorThickness: 100, floorThicknessIndex: 2,
+
+    floorMaterial: 'pu', floorMaterialIndex: 0,
+    floorThickness: 100, floorThicknessIndex: 2,
     floorK: 0.225, floorType: 0.5, floorTypeIndex: 0,
     floorTypeOptions: ['架空地板（半温差）', '直接接触土壤', '下方为常温空间', '下方为加热空间'],
     floorTypeValues: [0.5, 0.7, 1.0, 0.3], floorArea: 200,
+
     partitionArea: 0, partitionMaterial: 'pu', partitionMaterialIndex: 0,
     partitionThickness: 100, partitionThicknessIndex: 2, partitionK: 0.225, adjacentTemp: 0,
+
     productTypeIndex: 0,
     productOptions: [
       { label: '鲜肉（猪肉）', inTemp: 4, outTemp: -18, freezePoint: -2.2, cpAbove: 3.10, cpBelow: 1.68, latentHeat: 241, resp: 0, density: 450 },
@@ -77,31 +87,46 @@ Page({
     goodsMass: 0, goodsInTemp: 4, goodsOutTemp: -18, freezePoint: -2.2,
     cpAbove: 3.10, cpBelow: 1.68, latentHeat: 241, respirationHeat: 0,
     coolingTime: 18, packMass: 0, packCp: 1.5, packTemp: 4,
+
     doorWidth: 2.0, doorHeight: 2.5, doorOpens: 30, doorDuration: 30,
     hasAirCurtain: false, hasBufferRoom: false, doorArea: 5.0,
     dailyAirVolume: 0, outdoorEnthalpy: 0, indoorEnthalpy: 0, enthalpyDiff: 0,
+
     personCount: 2, personHeat: 280, personTime: 4,
     lightingDensity: 5, lightingTime: 8,
     equipmentPower: 1.5, equipmentDiversity: 0.5, equipmentTime: 4,
+
     fanMotorPower: 2.2, motorEfficiency: 0.8, motorTime: 18, otherMotorPower: 0,
+
     refrigerant: 'R507', refrigerantIndex: 1,
     refrigerantOptions: ['R22（高温库）', 'R507（中低温库）'],
     compressorType: 'piston', compressorTypeIndex: 0,
     compressorTypeOptions: ['活塞式（半封闭）', '螺杆式（带经济器）'],
-    hasEconomizer: false, evapTemp: -28, condTemp: 45,
+    coolingType: 'air', coolingTypeIndex: 0,
+    coolingTypeOptions: ['风冷冷凝器', '水冷冷凝器', '蒸发式冷凝器'],
+    hasEconomizer: false,
+    evapTemp: -28, condTemp: 45,
+
     envelopeTotal: 0, envelopeTotalKW: 0, envelopeRows: [],
-    goodsTotal: 0, goodsTotalKW: 0, goodsSensible: 0, goodsLatent: 0,
-    packLoad: 0, containerLoad: 0, respLoad: 0,
-    ventTotal: 0, ventTotalKW: 0, operationTotal: 0, operationTotalKW: 0,
+    goodsTotal: 0, goodsTotalKW: 0,
+    goodsSensible: 0, goodsLatent: 0, packLoad: 0, respLoad: 0,
+    ventTotal: 0, ventTotalKW: 0,
+    operationTotal: 0, operationTotalKW: 0,
     personTotal: 0, lightingTotal: 0, equipmentTotal: 0, doorTotal: 0,
     motorTotal: 0, motorTotalKW: 0,
+
     r1: 0, r2: 0, r3: 0, r4: 0, r5: 0,
     r1p: '0%', r2p: '0%', r3p: '0%', r4p: '0%', r5p: '0%',
-    rTotal: 0, rDesign: 0, barData: [],
+    rTotal: 0, rDesign: 0,
+
+    barData: [],
     compressorPower: 0, suggestedCapacity: 0, fanSuggestion: 0,
-    theoreticalCOP: 0, correctedCOP: 0, displacement: 0,
+    suctionTemp: 0, actualCOP: 0, displacement: 0,
+    condenserHeat: 0, condenserType: '', condenserCapacity: 0, condenserFactor: 1.2,
+
     companyName: '青岛冷锋节能工程有限公司',
-    companyPhone: '13061468618', companyAddress: '山东省青岛市'
+    companyPhone: '13061468618',
+    companyAddress: '山东省青岛市'
   },
 
   onLoad() {
@@ -208,6 +233,13 @@ Page({
   onToggleSwitch(e) {
     const field = e.currentTarget.dataset.field;
     this.setData({ [field]: e.detail.value });
+    this.calculateAll();
+  },
+
+  onCoolingTypeChange(e) {
+    const idx = parseInt(e.detail.value);
+    const types = ['air', 'water', 'evap'];
+    this.setData({ coolingTypeIndex: idx, coolingType: types[idx] });
     this.calculateAll();
   },
 
@@ -359,7 +391,8 @@ Page({
       fanMotorPower: num(d.fanMotorPower), motorEfficiency: num(d.motorEfficiency),
       motorTime: num(d.motorTime), otherMotorPower: num(d.otherMotorPower),
       evapTemp: num(d.evapTemp), condTemp: num(d.condTemp),
-      refrigerant: d.refrigerant, compressorType: d.compressorType, hasEconomizer: d.hasEconomizer
+      refrigerant: d.refrigerant, compressorType: d.compressorType,
+      hasEconomizer: d.hasEconomizer, coolingType: d.coolingType
     };
   },
 
@@ -367,6 +400,7 @@ Page({
     const params = this.getParams();
     const result = calc.calculateTotal(params);
     const selection = calc.calculateSelection(result, params);
+
     const envelopeRows = [
       { name: '屋顶/顶棚', area: result.envelope.roof.area.toFixed(2),
         material: calc.MATERIAL_NAMES[params.roofMaterial],
@@ -389,6 +423,7 @@ Page({
         k: result.envelope.partition.k.toFixed(3), delta: result.envelope.partition.delta.toFixed(1),
         alpha: result.envelope.partition.alpha.toFixed(2), load: result.envelope.partition.load.toFixed(1) }
     ];
+
     const loads = [result.envelope.total, result.goods.total, result.ventilation.total, result.operation.total, result.motor.total];
     const labels = ['围护结构', '货物负荷', '开门渗透', '操作管理', '电机热负荷'];
     const colors = ['#2a5298', '#e74c3c', '#27ae60', '#f39c12', '#9b59b6'];
@@ -397,6 +432,7 @@ Page({
       const pct = total > 0 ? (loads[i] / total * 100) : 0;
       return { label: label, pct: Math.max(pct, 2), kw: (loads[i] / 1000).toFixed(2), color: colors[i] };
     });
+
     this.setData({
       envelopeTotal: result.envelope.total.toFixed(1),
       envelopeTotalKW: (result.envelope.total / 1000).toFixed(2),
@@ -435,12 +471,14 @@ Page({
       compressorPower: selection.compressorPower.toFixed(2),
       suggestedCapacity: selection.suggestedCapacity.toFixed(2),
       fanSuggestion: selection.fanCapacity.toFixed(2),
-      theoreticalCOP: selection.theoreticalCOP.toFixed(2),
-      correctedCOP: selection.correctedCOP.toFixed(2),
+      suctionTemp: selection.suctionTemp.toFixed(1),
+      actualCOP: selection.actualCOP.toFixed(2),
       displacement: selection.displacement.toFixed(1),
       compTypeName: selection.compressorType,
       econDesc: selection.econDesc,
-      carnotCOP: selection.carnotCOP
+      condenserHeat: selection.condenserHeat.toFixed(2),
+      condenserType: selection.condenserType,
+      condenserCapacity: selection.condenserCapacity.toFixed(2)
     });
     this._lastResult = { params, result, selection };
   },
@@ -491,12 +529,15 @@ Page({
   经济器：${selection.econDesc}
   蒸发温度：${selection.evapTemp}℃
   冷凝温度：${selection.condTemp}℃
-  理论COP：${selection.theoreticalCOP}
-  实际COP（含工程修正）：${selection.correctedCOP}
+  吸气温度（过热度8℃）：${selection.suctionTemp}℃
+  实际能效比 COP：${selection.actualCOP}
   压缩机轴功率：${selection.compressorPower.toFixed(2)} kW
   压缩机排气量：${selection.displacement.toFixed(1)} m³/h
   建议制冷量：${selection.suggestedCapacity.toFixed(2)} kW
   冷风机建议：${selection.fanCapacity.toFixed(2)} kW
+  冷凝器类型：${selection.condenserType}
+  冷凝器热负荷：${selection.condenserHeat.toFixed(2)} kW
+  冷凝器建议配置：${selection.condenserCapacity.toFixed(2)} kW
 
 ═══════════════════════════════════
   青岛冷锋节能工程有限公司

@@ -1,82 +1,63 @@
 <!-- 冷库冷量计算小程序 - 主页面 -->
 <view class="page">
-  <!-- 头部 -->
   <view class="header">
     <view class="header-title">❄️ 冷库冷量计算软件</view>
     <view class="header-subtitle">专业冷库热负荷计算 · 制冷设备选型参考</view>
   </view>
 
-  <!-- 标签栏 -->
   <scroll-view scroll-x class="tab-bar" enhanced show-scrollbar="{{false}}">
     <view class="tab-inner">
-      <view
-        wx:for="{{tabs}}"
-        wx:key="key"
-        class="tab-item {{activeTab === item.key ? 'active' : ''}}"
-        data-tab="{{item.key}}"
-        bindtap="switchTab"
-      >{{item.label}}</view>
+      <view wx:for="{{tabs}}" wx:key="key" class="tab-item {{activeTab === item.key ? 'active' : ''}}" data-tab="{{item.key}}" bindtap="switchTab">{{item.label}}</view>
     </view>
   </scroll-view>
 
-  <!-- ===== 基本信息 ===== -->
+  <!-- 基本信息 -->
   <view class="tab-content" wx:if="{{activeTab === 'basic'}}">
     <view class="card">
       <view class="card-title">库房基本信息</view>
-
       <view class="form-item">
         <view class="form-label">库房名称</view>
         <input class="input" value="{{roomName}}" data-field="roomName" bindinput="onTextInput" placeholder="输入库房名称" />
       </view>
-
       <view class="form-item">
         <view class="form-label">库房类型</view>
         <picker mode="selector" range="{{roomTypeOptions}}" value="{{roomTypeIndex}}" bindchange="onRoomTypeChange">
           <view class="picker-input">{{roomTypeOptions[roomTypeIndex]}}</view>
         </picker>
       </view>
-
       <view class="form-item">
         <view class="form-label">库内设计温度 (℃)</view>
         <input class="input" type="digit" value="{{indoorTemp}}" data-field="indoorTemp" bindinput="onInput" />
       </view>
-
       <view class="form-item">
         <view class="form-label">夏季室外计算温度 (℃)</view>
         <input class="input" type="digit" value="{{outdoorTemp}}" data-field="outdoorTemp" bindinput="onInput" />
       </view>
-
       <view class="form-item">
         <view class="form-label">室外相对湿度 (%)</view>
         <input class="input" type="digit" value="{{outdoorHumidity}}" data-field="outdoorHumidity" bindinput="onInput" />
       </view>
-
       <view class="form-item">
         <view class="form-label">库内相对湿度 (%)</view>
         <input class="input" type="digit" value="{{indoorHumidity}}" data-field="indoorHumidity" bindinput="onInput" />
       </view>
-
       <view class="form-item">
         <view class="form-label">库房长度 (m)</view>
         <input class="input" type="digit" value="{{roomLength}}" data-field="roomLength" bindinput="onInput" />
       </view>
-
       <view class="form-item">
         <view class="form-label">库房宽度 (m)</view>
         <input class="input" type="digit" value="{{roomWidth}}" data-field="roomWidth" bindinput="onInput" />
       </view>
-
       <view class="form-item">
         <view class="form-label">库房高度 (m)</view>
         <input class="input" type="digit" value="{{roomHeight}}" data-field="roomHeight" bindinput="onInput" />
       </view>
-
       <view class="form-item">
         <view class="form-label">安全系数 (%)</view>
         <input class="input" type="digit" value="{{safetyFactor}}" data-field="safetyFactor" bindinput="onInput" />
         <view class="form-tip">通常取 5%~15%</view>
       </view>
-
       <view class="info-box">
         <view class="info-row"><text class="info-label">库房容积：</text><text class="info-value">{{roomVolume}} m³</text></view>
         <view class="info-row"><text class="info-label">库房总面积（六面）：</text><text class="info-value">{{totalArea}} m²</text></view>
@@ -84,46 +65,31 @@
     </view>
   </view>
 
-  <!-- ===== 围护结构 ===== -->
+  <!-- 围护结构 -->
   <view class="tab-content" wx:if="{{activeTab === 'envelope'}}">
     <view class="card">
       <view class="card-title">围护结构传热负荷计算</view>
       <view class="desc">Q₁ = K × F × Δt × α</view>
-
-      <!-- 统一设置 -->
       <view class="preset-box">
         <view class="preset-title">🔧 保温材料统一设置</view>
-
         <view class="form-item">
           <view class="form-label">保温板材类型</view>
           <picker mode="selector" range="{{materialOptions}}" range-key="label" value="{{presetMaterialIndex}}" bindchange="onPresetMaterialChange">
             <view class="picker-input">{{materialOptions[presetMaterialIndex].label}}</view>
           </picker>
         </view>
-
         <view class="form-item">
           <view class="form-label">保温层厚度 (mm)</view>
           <picker mode="selector" range="{{thicknessOptions}}" value="{{presetThicknessIndex}}" bindchange="onPresetThicknessChange">
             <view class="picker-input">{{thicknessOptions[presetThicknessIndex]}} mm</view>
           </picker>
         </view>
-
         <view class="btn btn-primary btn-block" bindtap="applyPresetToAll">一键应用到所有部位</view>
-
-        <view class="k-preview">
-          当前配置理论传热系数 K = <text class="k-value">{{presetK}}</text> W/(m²·K)
-        </view>
+        <view class="k-preview">当前配置理论传热系数 K = <text class="k-value">{{presetK}}</text> W/(m²·K)</view>
       </view>
-
-      <!-- 各部位配置 -->
       <view class="section-title">各部位保温配置</view>
-
-      <!-- 屋顶 -->
       <view class="config-row">
-        <view class="config-header">
-          <text class="config-title">🏠 屋顶/顶棚</text>
-          <text class="config-area">面积：{{roofArea}} m²</text>
-        </view>
+        <view class="config-header"><text class="config-title">🏠 屋顶/顶棚</text><text class="config-area">面积：{{roofArea}} m²</text></view>
         <view class="form-item">
           <view class="form-label">保温板材类型</view>
           <picker mode="selector" range="{{materialOptions}}" range-key="label" value="{{roofMaterialIndex}}" data-part="roof" bindchange="onMaterialChange">
@@ -148,13 +114,8 @@
           </picker>
         </view>
       </view>
-
-      <!-- 外墙 -->
       <view class="config-row">
-        <view class="config-header">
-          <text class="config-title">🧱 外墙（四面-隔墙）</text>
-          <text class="config-area">面积：{{wallArea}} m²</text>
-        </view>
+        <view class="config-header"><text class="config-title">🧱 外墙（四面-隔墙）</text><text class="config-area">面积：{{wallArea}} m²</text></view>
         <view class="form-item">
           <view class="form-label">保温板材类型</view>
           <picker mode="selector" range="{{materialOptions}}" range-key="label" value="{{wallMaterialIndex}}" data-part="wall" bindchange="onMaterialChange">
@@ -179,13 +140,8 @@
           </picker>
         </view>
       </view>
-
-      <!-- 地板 -->
       <view class="config-row">
-        <view class="config-header">
-          <text class="config-title">⬇️ 地板</text>
-          <text class="config-area">面积：{{floorArea}} m²</text>
-        </view>
+        <view class="config-header"><text class="config-title">⬇️ 地板</text><text class="config-area">面积：{{floorArea}} m²</text></view>
         <view class="form-item">
           <view class="form-label">保温板材类型</view>
           <picker mode="selector" range="{{materialOptions}}" range-key="label" value="{{floorMaterialIndex}}" data-part="floor" bindchange="onMaterialChange">
@@ -210,13 +166,8 @@
           </picker>
         </view>
       </view>
-
-      <!-- 隔墙 -->
       <view class="config-row">
-        <view class="config-header">
-          <text class="config-title">🚪 隔墙（与邻室）</text>
-          <text class="config-area">面积：{{partitionArea}} m²</text>
-        </view>
+        <view class="config-header"><text class="config-title">🚪 隔墙（与邻室）</text><text class="config-area">面积：{{partitionArea}} m²</text></view>
         <view class="form-item">
           <view class="form-label">隔墙面积 (m²)</view>
           <input class="input" type="digit" value="{{partitionArea}}" data-field="partitionArea" bindinput="onInput" />
@@ -243,29 +194,17 @@
           <input class="input" type="digit" value="{{adjacentTemp}}" data-field="adjacentTemp" bindinput="onInput" />
         </view>
       </view>
-
-      <!-- 计算结果表 -->
       <view class="section-title">📊 围护结构传热计算结果</view>
       <view class="table-wrap">
         <view class="table-header">
-          <text class="th th-name">部位</text>
-          <text class="th">面积</text>
-          <text class="th">材料</text>
-          <text class="th">厚度</text>
-          <text class="th">K值</text>
-          <text class="th">温差</text>
-          <text class="th">α</text>
-          <text class="th">传热量(W)</text>
+          <text class="th th-name">部位</text><text class="th">面积</text><text class="th">材料</text>
+          <text class="th">厚度</text><text class="th">K值</text><text class="th">温差</text><text class="th">α</text><text class="th">传热量(W)</text>
         </view>
         <view class="table-row" wx:for="{{envelopeRows}}" wx:key="name">
-          <text class="td td-name">{{item.name}}</text>
-          <text class="td">{{item.area}}</text>
-          <text class="td td-mat">{{item.material}}</text>
-          <text class="td">{{item.thickness}}</text>
-          <text class="td">{{item.k}}</text>
-          <text class="td">{{item.delta}}</text>
-          <text class="td">{{item.alpha}}</text>
-          <text class="td td-load">{{item.load}}</text>
+          <text class="td td-name">{{item.name}}</text><text class="td">{{item.area}}</text>
+          <text class="td td-mat">{{item.material}}</text><text class="td">{{item.thickness}}</text>
+          <text class="td">{{item.k}}</text><text class="td">{{item.delta}}</text>
+          <text class="td">{{item.alpha}}</text><text class="td td-load">{{item.load}}</text>
         </view>
         <view class="table-total">
           <text class="total-label">围护结构总传热负荷</text>
@@ -275,13 +214,11 @@
     </view>
   </view>
 
-  <!-- ===== 货物负荷 ===== -->
+  <!-- 货物负荷 -->
   <view class="tab-content" wx:if="{{activeTab === 'goods'}}">
     <view class="card">
       <view class="card-title">货物冷负荷计算</view>
       <view class="desc">包含货物冷却、冻结潜热、呼吸热、包装材料（含托盘、纸箱）的热量</view>
-
-      <!-- 货物类型选择 -->
       <view class="preset-box">
         <view class="preset-title">📦 货物类型选择（自动填入热工参数）</view>
         <view class="form-item">
@@ -291,7 +228,6 @@
           </picker>
         </view>
       </view>
-
       <view class="section-title">货物热工参数（自动填入，可手动修改）</view>
       <view class="form-item">
         <view class="form-label">每日进货量 (kg/d)</view>
@@ -334,9 +270,7 @@
         <input class="input" type="digit" value="{{coolingTime}}" data-field="coolingTime" bindinput="onInput" />
         <view class="form-tip">默认18小时</view>
       </view>
-
       <view class="section-title">包装材料（含托盘、纸箱、周转筐）</view>
-
       <view class="form-item">
         <view class="form-label">包装材料质量 (kg/d)</view>
         <input class="input" type="digit" value="{{packMass}}" data-field="packMass" bindinput="onInput" />
@@ -351,7 +285,6 @@
         <input class="input" type="digit" value="{{packTemp}}" data-field="packTemp" bindinput="onInput" />
         <view class="form-tip">自动=货物入库温度</view>
       </view>
-
       <view class="result-summary">
         <view class="result-title">货物总冷负荷：{{goodsTotal}} W = {{goodsTotalKW}} kW</view>
         <view class="breakdown">
@@ -364,12 +297,11 @@
     </view>
   </view>
 
-  <!-- ===== 开门渗透（原通风换气） ===== -->
+  <!-- 开门渗透 -->
   <view class="tab-content" wx:if="{{activeTab === 'ventilation'}}">
     <view class="card">
       <view class="card-title">开门渗透冷负荷计算</view>
       <view class="desc">Q = F门 × v × ρ × Δh × (n × τ / 86400) × 修正系数</view>
-
       <view class="section-title">门洞尺寸</view>
       <view class="form-item">
         <view class="form-label">门洞宽度 (m)</view>
@@ -379,7 +311,6 @@
         <view class="form-label">门洞高度 (m)</view>
         <input class="input" type="digit" value="{{doorHeight}}" data-field="doorHeight" bindinput="onInput" />
       </view>
-
       <view class="section-title">开门频次</view>
       <view class="form-item">
         <view class="form-label">每日开门次数 (次/日)</view>
@@ -391,7 +322,6 @@
         <input class="input" type="digit" value="{{doorDuration}}" data-field="doorDuration" bindinput="onInput" />
         <view class="form-tip">约30秒，如果工人操作时间较长，时间可适当加长</view>
       </view>
-
       <view class="section-title">渗透修正措施</view>
       <view class="form-item">
         <view class="form-label">是否有风幕</view>
@@ -403,7 +333,6 @@
         <switch checked="{{hasBufferRoom}}" data-field="hasBufferRoom" bindchange="onToggleSwitch" color="#2a5298" />
         <view class="form-tip">缓冲间可阻隔约80%冷热交换</view>
       </view>
-
       <view class="info-box">
         <view class="section-subtitle">自动计算结果</view>
         <view class="info-row"><text class="info-label">门洞面积：</text><text class="info-value">{{doorArea}} m²</text></view>
@@ -412,18 +341,16 @@
         <view class="info-row"><text class="info-label">室内焓值 h_n：</text><text class="info-value">{{indoorEnthalpy}} kJ/kg</text></view>
         <view class="info-row"><text class="info-label">焓差 Δh：</text><text class="info-value">{{enthalpyDiff}} kJ/kg</text></view>
       </view>
-
       <view class="result-summary">
         <view class="result-title">开门渗透总冷负荷：{{ventTotal}} W = {{ventTotalKW}} kW</view>
       </view>
     </view>
   </view>
 
-  <!-- ===== 操作管理 ===== -->
+  <!-- 操作管理 -->
   <view class="tab-content" wx:if="{{activeTab === 'operation'}}">
     <view class="card">
       <view class="card-title">操作管理冷负荷</view>
-
       <view class="section-title">人员散热</view>
       <view class="form-item">
         <view class="form-label">库内工作人员数量 (人)</view>
@@ -438,7 +365,6 @@
         <view class="form-label">人员每日在库时间 (h)</view>
         <input class="input" type="digit" value="{{personTime}}" data-field="personTime" bindinput="onInput" />
       </view>
-
       <view class="section-title">照明散热</view>
       <view class="form-item">
         <view class="form-label">照明功率密度 (W/m²)</view>
@@ -449,7 +375,6 @@
         <view class="form-label">每日照明时间 (h)</view>
         <input class="input" type="digit" value="{{lightingTime}}" data-field="lightingTime" bindinput="onInput" />
       </view>
-
       <view class="section-title">设备散热</view>
       <view class="form-item">
         <view class="form-label">库内设备总功率 (kW)</view>
@@ -464,7 +389,6 @@
         <view class="form-label">设备每日运行时间 (h)</view>
         <input class="input" type="digit" value="{{equipmentTime}}" data-field="equipmentTime" bindinput="onInput" />
       </view>
-
       <view class="result-summary">
         <view class="result-title">操作管理总冷负荷：{{operationTotal}} W = {{operationTotalKW}} kW</view>
         <view class="breakdown">
@@ -476,12 +400,11 @@
     </view>
   </view>
 
-  <!-- ===== 电机热负荷 ===== -->
+  <!-- 电机热负荷 -->
   <view class="tab-content" wx:if="{{activeTab === 'motor'}}">
     <view class="card">
       <view class="card-title">电机运行热负荷</view>
       <view class="desc">库内风机、电机等设备运行时产生的热量</view>
-
       <view class="form-item">
         <view class="form-label">冷风机电机总功率 (kW)</view>
         <input class="input" type="digit" value="{{fanMotorPower}}" data-field="fanMotorPower" bindinput="onInput" />
@@ -499,57 +422,25 @@
         <view class="form-label">其他库内电机功率 (kW)</view>
         <input class="input" type="digit" value="{{otherMotorPower}}" data-field="otherMotorPower" bindinput="onInput" />
       </view>
-
       <view class="result-summary">
         <view class="result-title">电机总热负荷：{{motorTotal}} W = {{motorTotalKW}} kW</view>
       </view>
     </view>
   </view>
 
-  <!-- ===== 计算结果 ===== -->
+  <!-- 计算结果 -->
   <view class="tab-content" wx:if="{{activeTab === 'result'}}">
     <view class="card">
       <view class="card-title">📊 冷量计算结果汇总</view>
-
       <view class="result-main">
-        <view class="result-row">
-          <text class="row-label">① 围护结构传热负荷</text>
-          <text class="row-value">{{r1}} kW</text>
-          <text class="row-percent">{{r1p}}</text>
-        </view>
-        <view class="result-row">
-          <text class="row-label">② 货物冷负荷</text>
-          <text class="row-value">{{r2}} kW</text>
-          <text class="row-percent">{{r2p}}</text>
-        </view>
-        <view class="result-row">
-          <text class="row-label">③ 开门渗透冷负荷</text>
-          <text class="row-value">{{r3}} kW</text>
-          <text class="row-percent">{{r3p}}</text>
-        </view>
-        <view class="result-row">
-          <text class="row-label">④ 操作管理冷负荷</text>
-          <text class="row-value">{{r4}} kW</text>
-          <text class="row-percent">{{r4p}}</text>
-        </view>
-        <view class="result-row">
-          <text class="row-label">⑤ 电机运行热负荷</text>
-          <text class="row-value">{{r5}} kW</text>
-          <text class="row-percent">{{r5p}}</text>
-        </view>
-
-        <view class="result-row total-row">
-          <text class="row-label">计算总冷负荷</text>
-          <text class="row-value">{{rTotal}} kW</text>
-          <text class="row-percent">100%</text>
-        </view>
-        <view class="result-row grand-total">
-          <text class="row-label">设计冷量（含安全系数）</text>
-          <text class="row-value">{{rDesign}} kW</text>
-        </view>
+        <view class="result-row"><text class="row-label">① 围护结构传热负荷</text><text class="row-value">{{r1}} kW</text><text class="row-percent">{{r1p}}</text></view>
+        <view class="result-row"><text class="row-label">② 货物冷负荷</text><text class="row-value">{{r2}} kW</text><text class="row-percent">{{r2p}}</text></view>
+        <view class="result-row"><text class="row-label">③ 开门渗透冷负荷</text><text class="row-value">{{r3}} kW</text><text class="row-percent">{{r3p}}</text></view>
+        <view class="result-row"><text class="row-label">④ 操作管理冷负荷</text><text class="row-value">{{r4}} kW</text><text class="row-percent">{{r4p}}</text></view>
+        <view class="result-row"><text class="row-label">⑤ 电机运行热负荷</text><text class="row-value">{{r5}} kW</text><text class="row-percent">{{r5p}}</text></view>
+        <view class="result-row total-row"><text class="row-label">计算总冷负荷</text><text class="row-value">{{rTotal}} kW</text><text class="row-percent">100%</text></view>
+        <view class="result-row grand-total"><text class="row-label">设计冷量（含安全系数）</text><text class="row-value">{{rDesign}} kW</text></view>
       </view>
-
-      <!-- 柱状图 -->
       <view class="chart-box">
         <view class="section-title">负荷构成比例</view>
         <view class="bar-chart">
@@ -563,11 +454,8 @@
           </view>
         </view>
       </view>
-
-      <!-- 设备选型 -->
       <view class="selection-box">
         <view class="section-title">🔧 制冷设备选型参考</view>
-
         <view class="preset-box">
           <view class="form-item">
             <view class="form-label">制冷剂类型</view>
@@ -579,6 +467,12 @@
             <view class="form-label">压缩机类型</view>
             <picker mode="selector" range="{{compressorTypeOptions}}" value="{{compressorTypeIndex}}" bindchange="onCompressorTypeChange">
               <view class="picker-input">{{compressorTypeOptions[compressorTypeIndex]}}</view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <view class="form-label">冷凝器冷却方式</view>
+            <picker mode="selector" range="{{coolingTypeOptions}}" value="{{coolingTypeIndex}}" bindchange="onCoolingTypeChange">
+              <view class="picker-input">{{coolingTypeOptions[coolingTypeIndex]}}</view>
             </picker>
           </view>
           <view class="form-item">
@@ -597,22 +491,24 @@
             <view class="form-tip">默认=室外温度+10℃，可修改</view>
           </view>
         </view>
-
         <view class="info-box">
           <view class="section-subtitle">压缩机选型计算结果</view>
-          <view class="info-row"><text class="info-label">卡诺理论COP：</text><text class="info-value">{{carnotCOP}}</text></view>
+          <view class="info-row"><text class="info-label">吸气温度（过热度8℃）：</text><text class="info-value">{{suctionTemp}}℃</text></view>
           <view class="info-row"><text class="info-label">压缩机类型：</text><text class="info-value">{{compTypeName}}</text></view>
           <view class="info-row"><text class="info-label">经济器：</text><text class="info-value">{{econDesc}}</text></view>
-          <view class="info-row"><text class="info-label">理论能效比 COP：</text><text class="info-value">{{theoreticalCOP}}</text></view>
-          <view class="info-row"><text class="info-label">实际能效比（含工程修正）：</text><text class="info-value">{{correctedCOP}}</text></view>
+          <view class="info-row"><text class="info-label">实际能效比 COP：</text><text class="info-value">{{actualCOP}}</text></view>
           <view class="info-row"><text class="info-label">压缩机轴功率：</text><text class="info-value">{{compressorPower}} kW</text></view>
           <view class="info-row"><text class="info-label">压缩机排气量：</text><text class="info-value">{{displacement}} m³/h</text></view>
           <view class="info-row"><text class="info-label">建议配置制冷量：</text><text class="info-value">{{suggestedCapacity}} kW</text></view>
           <view class="info-row"><text class="info-label">冷风机建议配置：</text><text class="info-value">{{fanSuggestion}} kW（1.2倍余量）</text></view>
         </view>
+        <view class="info-box">
+          <view class="section-subtitle">冷凝器建议配置</view>
+          <view class="info-row"><text class="info-label">冷凝器类型：</text><text class="info-value">{{condenserType}}</text></view>
+          <view class="info-row"><text class="info-label">冷凝器热负荷：</text><text class="info-value">{{condenserHeat}} kW</text></view>
+          <view class="info-row"><text class="info-label">冷凝器建议配置：</text><text class="info-value">{{condenserCapacity}} kW</text></view>
+        </view>
       </view>
-
-      <!-- 操作按钮 -->
       <view class="action-buttons">
         <view class="btn btn-primary" bindtap="exportReport">📄 导出计算报告</view>
         <view class="btn btn-secondary" bindtap="resetAll">🔄 重置参数</view>
@@ -620,7 +516,6 @@
     </view>
   </view>
 
-  <!-- 公司信息页脚 -->
   <view class="footer">
     <view class="footer-company">
       <view class="footer-name">{{companyName}}</view>

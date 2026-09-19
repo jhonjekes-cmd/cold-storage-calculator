@@ -98,35 +98,33 @@ Page({
 
     // ===== 货物负荷 =====
     productTypeIndex: 0,
+    // density: 货物堆积密度 kg/m³（用于按库容5%自动计算进货量）
     productOptions: [
-      { label: '鲜肉（猪肉）', inTemp: 4, outTemp: -18, freezePoint: -2.2, cpAbove: 2.85, cpBelow: 1.55, latentHeat: 241, resp: 0 },
-      { label: '冻肉（猪肉）', inTemp: -15, outTemp: -18, freezePoint: -2.2, cpAbove: 2.85, cpBelow: 1.55, latentHeat: 0, resp: 0 },
-      { label: '鲜肉（牛肉）', inTemp: 4, outTemp: -18, freezePoint: -1.7, cpAbove: 3.08, cpBelow: 1.67, latentHeat: 249, resp: 0 },
-      { label: '冻肉（牛肉）', inTemp: -15, outTemp: -18, freezePoint: -1.7, cpAbove: 3.08, cpBelow: 1.67, latentHeat: 0, resp: 0 },
-      { label: '鲜肉（禽肉/鸡）', inTemp: 4, outTemp: -18, freezePoint: -2.8, cpAbove: 3.31, cpBelow: 1.76, latentHeat: 247, resp: 0 },
-      { label: '冻肉（禽肉/鸡）', inTemp: -15, outTemp: -18, freezePoint: -2.8, cpAbove: 3.31, cpBelow: 1.76, latentHeat: 0, resp: 0 },
-      { label: '鲜鱼/海鲜', inTemp: 5, outTemp: -18, freezePoint: -2.0, cpAbove: 3.60, cpBelow: 1.86, latentHeat: 276, resp: 0 },
-      { label: '冻鱼/海鲜', inTemp: -15, outTemp: -18, freezePoint: -2.0, cpAbove: 3.60, cpBelow: 1.86, latentHeat: 0, resp: 0 },
-      { label: '蔬菜（叶菜类）', inTemp: 25, outTemp: 2, freezePoint: -0.2, cpAbove: 4.06, cpBelow: 1.94, latentHeat: 0, resp: 0.10 },
-      { label: '水果（苹果等）', inTemp: 25, outTemp: 2, freezePoint: -1.5, cpAbove: 3.73, cpBelow: 1.88, latentHeat: 0, resp: 0.05 },
-      { label: '乳制品（牛奶）', inTemp: 25, outTemp: 2, freezePoint: -0.5, cpAbove: 3.93, cpBelow: 1.95, latentHeat: 0, resp: 0 },
-      { label: '自定义', inTemp: 0, outTemp: -18, freezePoint: -1.5, cpAbove: 3.2, cpBelow: 1.7, latentHeat: 250, resp: 0 }
+      { label: '鲜肉（猪肉）', inTemp: 4, outTemp: -18, freezePoint: -2.2, cpAbove: 3.10, cpBelow: 1.68, latentHeat: 241, resp: 0, density: 450 },
+      { label: '冻肉（猪肉）', inTemp: -15, outTemp: -18, freezePoint: -2.2, cpAbove: 3.10, cpBelow: 1.68, latentHeat: 0, resp: 0, density: 450 },
+      { label: '鲜肉（牛肉）', inTemp: 4, outTemp: -18, freezePoint: -1.7, cpAbove: 3.22, cpBelow: 1.75, latentHeat: 249, resp: 0, density: 500 },
+      { label: '冻肉（牛肉）', inTemp: -15, outTemp: -18, freezePoint: -1.7, cpAbove: 3.22, cpBelow: 1.75, latentHeat: 0, resp: 0, density: 500 },
+      { label: '鲜肉（禽肉/鸡）', inTemp: 4, outTemp: -18, freezePoint: -2.8, cpAbove: 3.40, cpBelow: 1.82, latentHeat: 247, resp: 0, density: 380 },
+      { label: '冻肉（禽肉/鸡）', inTemp: -15, outTemp: -18, freezePoint: -2.8, cpAbove: 3.40, cpBelow: 1.82, latentHeat: 0, resp: 0, density: 380 },
+      { label: '鲜鱼/海鲜', inTemp: 5, outTemp: -18, freezePoint: -2.0, cpAbove: 3.80, cpBelow: 1.95, latentHeat: 276, resp: 0, density: 420 },
+      { label: '冻鱼/海鲜', inTemp: -15, outTemp: -18, freezePoint: -2.0, cpAbove: 3.80, cpBelow: 1.95, latentHeat: 0, resp: 0, density: 420 },
+      { label: '蔬菜（叶菜类）', inTemp: 25, outTemp: 2, freezePoint: -0.2, cpAbove: 3.95, cpBelow: 1.95, latentHeat: 0, resp: 0.10, density: 220 },
+      { label: '水果（苹果等）', inTemp: 25, outTemp: 2, freezePoint: -1.5, cpAbove: 3.70, cpBelow: 1.88, latentHeat: 0, resp: 0.05, density: 280 },
+      { label: '乳制品（牛奶）', inTemp: 25, outTemp: 2, freezePoint: -0.5, cpAbove: 3.93, cpBelow: 1.95, latentHeat: 0, resp: 0, density: 600 },
+      { label: '自定义', inTemp: 0, outTemp: -18, freezePoint: -1.5, cpAbove: 3.2, cpBelow: 1.7, latentHeat: 250, resp: 0, density: 400 }
     ],
-    goodsMass: 5000,
+    goodsMass: 0,
     goodsInTemp: 4,
     goodsOutTemp: -18,
     freezePoint: -2.2,
-    cpAbove: 2.85,
-    cpBelow: 1.55,
+    cpAbove: 3.10,
+    cpBelow: 1.68,
     latentHeat: 241,
     respirationHeat: 0,
-    coolingTime: 24,
-    packMass: 500,
+    coolingTime: 18,
+    packMass: 0,
     packCp: 1.5,
-    packTemp: 35,
-    containerMass: 0,
-    containerCp: 0.5,
-    containerTimes: 0,
+    packTemp: 4,
 
     // ===== 开门渗透（原通风换气）=====
     doorWidth: 2.0,
@@ -208,6 +206,7 @@ Page({
     this.updateRoomInfo();
     this.updateAllKValues();
     this.updatePresetK();
+    this.autoFillGoodsParams();
     this.calculateAll();
   },
 
@@ -317,14 +316,37 @@ Page({
     this.setData({
       productTypeIndex: idx,
       goodsInTemp: p.inTemp,
-      goodsOutTemp: p.outTemp,
       freezePoint: p.freezePoint,
       cpAbove: p.cpAbove,
       cpBelow: p.cpBelow,
       latentHeat: p.latentHeat,
       respirationHeat: p.resp
     });
+    this.autoFillGoodsParams();
     this.calculateAll();
+  },
+
+  // ===== 自动填入货物相关参数 =====
+  // 1. 每日进货量 = 库容(m³) × 5% × 货物密度(kg/m³)
+  // 2. 货物终温 = 库温
+  // 3. 包装质量 = 货物质量 × 10%
+  // 4. 包装初始温度 = 货物入库温度
+  autoFillGoodsParams() {
+    const d = this.data;
+    const p = d.productOptions[d.productTypeIndex] || {};
+    const density = p.density || 400;
+    const volume = d.roomVolume || 0;
+
+    // 每日进货量 = 库容 × 5% × 货物密度
+    const goodsMass = Math.round(volume * 0.05 * density);
+    // 货物终温 = 库温
+    const goodsOutTemp = d.indoorTemp;
+    // 包装质量 = 货物质量 × 10%
+    const packMass = Math.round(goodsMass * 0.1);
+    // 包装初始温度 = 货物入库温度
+    const packTemp = d.goodsInTemp;
+
+    this.setData({ goodsMass, goodsOutTemp, packMass, packTemp });
   },
 
   // ===== 开关门修正项切换 =====
@@ -438,6 +460,7 @@ Page({
     this.setData(updates);
     this.updateAllKValues();
     this.updatePresetK();
+    this.autoFillGoodsParams();
     this.calculateAll();
   },
 
@@ -474,6 +497,9 @@ Page({
       wallArea: parseFloat(wallArea.toFixed(2)),
       floorArea: parseFloat(roofArea.toFixed(2))
     });
+
+    // 库房尺寸变化时，重新自动计算货物进货量和包装量
+    this.autoFillGoodsParams();
   },
 
   // ===== 主计算函数 =====
@@ -520,9 +546,6 @@ Page({
       packMass: num(d.packMass),
       packCp: num(d.packCp),
       packTemp: num(d.packTemp),
-      containerMass: num(d.containerMass),
-      containerCp: num(d.containerCp),
-      containerTimes: num(d.containerTimes),
       doorWidth: num(d.doorWidth),
       doorHeight: num(d.doorHeight),
       doorOpens: num(d.doorOpens),
@@ -626,7 +649,6 @@ Page({
       goodsSensible: result.goods.sensible.toFixed(1),
       goodsLatent: result.goods.latent.toFixed(1),
       packLoad: result.goods.pack.toFixed(1),
-      containerLoad: result.goods.container.toFixed(1),
       respLoad: result.goods.respiration.toFixed(1),
       goodsTotal: result.goods.total.toFixed(1),
       goodsTotalKW: (result.goods.total / 1000).toFixed(2),
@@ -684,7 +706,7 @@ Page({
       return;
     }
 
-    const { params, result, selection } = data;
+    const { params, selection } = data;
     const date = new Date().toLocaleString('zh-CN');
     const getMatName = (key) => calc.MATERIAL_NAMES[params[key]] || params[key];
     const roomTypeMap = { cooling: '冷藏库', freezing: '冷冻库', deepfreeze: '速冻库', constant: '恒温库', custom: '自定义' };

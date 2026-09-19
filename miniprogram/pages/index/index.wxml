@@ -279,7 +279,7 @@
   <view class="tab-content" wx:if="{{activeTab === 'goods'}}">
     <view class="card">
       <view class="card-title">货物冷负荷计算</view>
-      <view class="desc">包含货物冷却、冻结潜热、呼吸热、包装材料及运载工具的热量</view>
+      <view class="desc">包含货物冷却、冻结潜热、呼吸热、包装材料（含托盘、纸箱）的热量</view>
 
       <!-- 货物类型选择 -->
       <view class="preset-box">
@@ -292,10 +292,11 @@
         </view>
       </view>
 
-      <view class="section-title">货物热工参数（可手动修改）</view>
+      <view class="section-title">货物热工参数（自动填入，可手动修改）</view>
       <view class="form-item">
         <view class="form-label">每日进货量 (kg/d)</view>
         <input class="input" type="digit" value="{{goodsMass}}" data-field="goodsMass" bindinput="onInput" />
+        <view class="form-tip">自动=库容×5%×货物密度，可手动调整</view>
       </view>
       <view class="form-item">
         <view class="form-label">货物进货温度 (℃)</view>
@@ -304,6 +305,7 @@
       <view class="form-item">
         <view class="form-label">货物终温 (℃)</view>
         <input class="input" type="digit" value="{{goodsOutTemp}}" data-field="goodsOutTemp" bindinput="onInput" />
+        <view class="form-tip">自动=库内设计温度</view>
       </view>
       <view class="form-item">
         <view class="form-label">货物冻结点温度 (℃)</view>
@@ -330,13 +332,15 @@
       <view class="form-item">
         <view class="form-label">货物冷却时间 (h)</view>
         <input class="input" type="digit" value="{{coolingTime}}" data-field="coolingTime" bindinput="onInput" />
+        <view class="form-tip">默认18小时</view>
       </view>
 
-      <view class="section-title">包装及运载工具</view>
+      <view class="section-title">包装材料（含托盘、纸箱、周转筐）</view>
 
       <view class="form-item">
         <view class="form-label">包装材料质量 (kg/d)</view>
         <input class="input" type="digit" value="{{packMass}}" data-field="packMass" bindinput="onInput" />
+        <view class="form-tip">自动=货物质量×10%，可手动调整</view>
       </view>
       <view class="form-item">
         <view class="form-label">包装比热容 [kJ/(kg·K)]</view>
@@ -345,18 +349,7 @@
       <view class="form-item">
         <view class="form-label">包装初始温度 (℃)</view>
         <input class="input" type="digit" value="{{packTemp}}" data-field="packTemp" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">运载工具质量 (kg/次)</view>
-        <input class="input" type="digit" value="{{containerMass}}" data-field="containerMass" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">运载工具比热容 [kJ/(kg·K)]</view>
-        <input class="input" type="digit" value="{{containerCp}}" data-field="containerCp" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">每日进货次数</view>
-        <input class="input" type="digit" value="{{containerTimes}}" data-field="containerTimes" bindinput="onInput" />
+        <view class="form-tip">自动=货物入库温度</view>
       </view>
 
       <view class="result-summary">
@@ -366,7 +359,6 @@
           <view class="breakdown-item">货物潜热（冻结）：{{goodsLatent}} W</view>
           <view class="breakdown-item">呼吸热（果蔬）：{{respLoad}} W</view>
           <view class="breakdown-item">包装材料冷负荷：{{packLoad}} W</view>
-          <view class="breakdown-item">运载工具冷负荷：{{containerLoad}} W</view>
         </view>
       </view>
     </view>

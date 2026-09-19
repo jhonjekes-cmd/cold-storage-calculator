@@ -97,13 +97,29 @@ Page({
     adjacentTemp: 0,
 
     // ===== 货物负荷 =====
+    productTypeIndex: 0,
+    productOptions: [
+      { label: '鲜肉（猪肉）', inTemp: 4, outTemp: -18, freezePoint: -2.2, cpAbove: 2.85, cpBelow: 1.55, latentHeat: 241, resp: 0 },
+      { label: '冻肉（猪肉）', inTemp: -15, outTemp: -18, freezePoint: -2.2, cpAbove: 2.85, cpBelow: 1.55, latentHeat: 0, resp: 0 },
+      { label: '鲜肉（牛肉）', inTemp: 4, outTemp: -18, freezePoint: -1.7, cpAbove: 3.08, cpBelow: 1.67, latentHeat: 249, resp: 0 },
+      { label: '冻肉（牛肉）', inTemp: -15, outTemp: -18, freezePoint: -1.7, cpAbove: 3.08, cpBelow: 1.67, latentHeat: 0, resp: 0 },
+      { label: '鲜肉（禽肉/鸡）', inTemp: 4, outTemp: -18, freezePoint: -2.8, cpAbove: 3.31, cpBelow: 1.76, latentHeat: 247, resp: 0 },
+      { label: '冻肉（禽肉/鸡）', inTemp: -15, outTemp: -18, freezePoint: -2.8, cpAbove: 3.31, cpBelow: 1.76, latentHeat: 0, resp: 0 },
+      { label: '鲜鱼/海鲜', inTemp: 5, outTemp: -18, freezePoint: -2.0, cpAbove: 3.60, cpBelow: 1.86, latentHeat: 276, resp: 0 },
+      { label: '冻鱼/海鲜', inTemp: -15, outTemp: -18, freezePoint: -2.0, cpAbove: 3.60, cpBelow: 1.86, latentHeat: 0, resp: 0 },
+      { label: '蔬菜（叶菜类）', inTemp: 25, outTemp: 2, freezePoint: -0.2, cpAbove: 4.06, cpBelow: 1.94, latentHeat: 0, resp: 0.10 },
+      { label: '水果（苹果等）', inTemp: 25, outTemp: 2, freezePoint: -1.5, cpAbove: 3.73, cpBelow: 1.88, latentHeat: 0, resp: 0.05 },
+      { label: '乳制品（牛奶）', inTemp: 25, outTemp: 2, freezePoint: -0.5, cpAbove: 3.93, cpBelow: 1.95, latentHeat: 0, resp: 0 },
+      { label: '自定义', inTemp: 0, outTemp: -18, freezePoint: -1.5, cpAbove: 3.2, cpBelow: 1.7, latentHeat: 250, resp: 0 }
+    ],
     goodsMass: 5000,
-    goodsInTemp: 0,
+    goodsInTemp: 4,
     goodsOutTemp: -18,
-    freezePoint: -1.5,
-    cpAbove: 3.2,
-    cpBelow: 1.7,
-    latentHeat: 250,
+    freezePoint: -2.2,
+    cpAbove: 2.85,
+    cpBelow: 1.55,
+    latentHeat: 241,
+    respirationHeat: 0,
     coolingTime: 24,
     packMass: 500,
     packCp: 1.5,
@@ -156,6 +172,7 @@ Page({
     goodsLatent: 0,
     packLoad: 0,
     containerLoad: 0,
+    respLoad: 0,
     ventTotal: 0,
     ventTotalKW: 0,
     operationTotal: 0,
@@ -284,6 +301,23 @@ Page({
     this.setData({
       floorTypeIndex: idx,
       floorType: this.data.floorTypeValues[idx]
+    });
+    this.calculateAll();
+  },
+
+  // ===== 货物类型选择（自动填充热工参数） =====
+  onProductTypeChange(e) {
+    const idx = parseInt(e.detail.value);
+    const p = this.data.productOptions[idx];
+    this.setData({
+      productTypeIndex: idx,
+      goodsInTemp: p.inTemp,
+      goodsOutTemp: p.outTemp,
+      freezePoint: p.freezePoint,
+      cpAbove: p.cpAbove,
+      cpBelow: p.cpBelow,
+      latentHeat: p.latentHeat,
+      respirationHeat: p.resp
     });
     this.calculateAll();
   },
@@ -453,6 +487,7 @@ Page({
       cpAbove: num(d.cpAbove),
       cpBelow: num(d.cpBelow),
       latentHeat: num(d.latentHeat),
+      respirationHeat: num(d.respirationHeat),
       coolingTime: num(d.coolingTime),
       packMass: num(d.packMass),
       packCp: num(d.packCp),
@@ -564,6 +599,7 @@ Page({
       goodsLatent: result.goods.latent.toFixed(1),
       packLoad: result.goods.pack.toFixed(1),
       containerLoad: result.goods.container.toFixed(1),
+      respLoad: result.goods.respiration.toFixed(1),
       goodsTotal: result.goods.total.toFixed(1),
       goodsTotalKW: (result.goods.total / 1000).toFixed(2),
 

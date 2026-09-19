@@ -90,13 +90,15 @@ function calculateEnvelope(params) {
 
 /**
  * 货物冷负荷计算
+ * 包含：货物冷却显热、冻结潜热、冻结后降温、包装材料、运载工具、呼吸热（果蔬）
  */
 function calculateGoods(params) {
   const {
     goodsMass, goodsInTemp, goodsOutTemp, freezePoint,
     cpAbove, cpBelow, latentHeat, coolingTime,
     packMass, packCp, packTemp,
-    containerMass, containerCp, containerTimes
+    containerMass, containerCp, containerTimes,
+    respirationHeat
   } = params;
 
   const timeSeconds = coolingTime * 3600;
@@ -121,7 +123,10 @@ function calculateGoods(params) {
   const containerDailyMass = containerMass * containerTimes;
   const containerLoad = containerDailyMass * containerCp * Math.max(0, packTemp - goodsOutTemp) * 1000 / timeSeconds;
 
-  const total = goodsTotal + packLoad + containerLoad;
+  // 呼吸热（果蔬类持续放热，单位W/kg，连续负荷不除以冷却时间）
+  const respHeat = (respirationHeat || 0) * goodsMass;
+
+  const total = goodsTotal + packLoad + containerLoad + respHeat;
 
   return {
     sensible: sensibleHeat + subcoolHeat,
@@ -129,6 +134,7 @@ function calculateGoods(params) {
     goodsTotal: goodsTotal,
     pack: packLoad,
     container: containerLoad,
+    respiration: respHeat,
     total: total
   };
 }

@@ -279,8 +279,20 @@
   <view class="tab-content" wx:if="{{activeTab === 'goods'}}">
     <view class="card">
       <view class="card-title">货物冷负荷计算</view>
-      <view class="desc">包含货物冷却、冻结潜热、包装材料及运载工具的热量</view>
+      <view class="desc">包含货物冷却、冻结潜热、呼吸热、包装材料及运载工具的热量</view>
 
+      <!-- 货物类型选择 -->
+      <view class="preset-box">
+        <view class="preset-title">📦 货物类型选择（自动填入热工参数）</view>
+        <view class="form-item">
+          <view class="form-label">货物类型</view>
+          <picker mode="selector" range="{{productOptions}}" range-key="label" value="{{productTypeIndex}}" bindchange="onProductTypeChange">
+            <view class="picker-input">{{productOptions[productTypeIndex].label}}</view>
+          </picker>
+        </view>
+      </view>
+
+      <view class="section-title">货物热工参数（可手动修改）</view>
       <view class="form-item">
         <view class="form-label">每日进货量 (kg/d)</view>
         <input class="input" type="digit" value="{{goodsMass}}" data-field="goodsMass" bindinput="onInput" />
@@ -308,6 +320,12 @@
       <view class="form-item">
         <view class="form-label">货物潜热 (kJ/kg)</view>
         <input class="input" type="digit" value="{{latentHeat}}" data-field="latentHeat" bindinput="onInput" />
+        <view class="form-tip">已冻货物填0，鲜货按ASHRAE数据填入</view>
+      </view>
+      <view class="form-item">
+        <view class="form-label">呼吸热 (W/kg)</view>
+        <input class="input" type="digit" value="{{respirationHeat}}" data-field="respirationHeat" bindinput="onInput" />
+        <view class="form-tip">蔬菜叶菜约0.1，水果约0.05，冻货为0</view>
       </view>
       <view class="form-item">
         <view class="form-label">货物冷却时间 (h)</view>
@@ -346,6 +364,7 @@
         <view class="breakdown">
           <view class="breakdown-item">货物显热（冷却）：{{goodsSensible}} W</view>
           <view class="breakdown-item">货物潜热（冻结）：{{goodsLatent}} W</view>
+          <view class="breakdown-item">呼吸热（果蔬）：{{respLoad}} W</view>
           <view class="breakdown-item">包装材料冷负荷：{{packLoad}} W</view>
           <view class="breakdown-item">运载工具冷负荷：{{containerLoad}} W</view>
         </view>
@@ -378,7 +397,7 @@
       <view class="form-item">
         <view class="form-label">每次开门时长 (秒)</view>
         <input class="input" type="digit" value="{{doorDuration}}" data-field="doorDuration" bindinput="onInput" />
-        <view class="form-tip">手动门约30秒，快速门约5~10秒</view>
+        <view class="form-tip">约30秒，如果工人操作时间较长，时间可适当加长</view>
       </view>
 
       <view class="section-title">渗透修正措施</view>

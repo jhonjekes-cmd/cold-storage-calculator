@@ -13,8 +13,8 @@
 .desc { font-size: 24rpx; color: #888; margin-bottom: 24rpx; padding: 16rpx 20rpx; background: #f8f9fa; border-left: 6rpx solid #2a5298; border-radius: 8rpx; }
 .form-item { margin-bottom: 24rpx; }
 .form-label { font-size: 26rpx; color: #555; margin-bottom: 10rpx; font-weight: 500; }
-.input { padding: 18rpx 20rpx; border: 2rpx solid #d0d5dd; border-radius: 12rpx; font-size: 28rpx; background: #fff; }
-.picker-input { padding: 18rpx 20rpx; border: 2rpx solid #d0d5dd; border-radius: 12rpx; font-size: 28rpx; background: #fff; color: #333; }
+.input { height: 88rpx; line-height: 88rpx; padding: 0 20rpx; border: 2rpx solid #d0d5dd; border-radius: 12rpx; font-size: 28rpx; background: #fff; box-sizing: border-box; }
+.picker-input { min-height: 88rpx; line-height: 48rpx; padding: 20rpx; border: 2rpx solid #d0d5dd; border-radius: 12rpx; font-size: 28rpx; background: #fff; color: #333; box-sizing: border-box; }
 .form-tip { font-size: 22rpx; color: #999; margin-top: 8rpx; }
 .info-box { margin-top: 24rpx; padding: 24rpx; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 12rpx; }
 .section-subtitle { font-size: 28rpx; color: #1565c0; font-weight: 600; margin-bottom: 12rpx; }

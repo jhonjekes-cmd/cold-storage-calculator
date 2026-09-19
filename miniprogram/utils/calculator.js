@@ -263,19 +263,116 @@ function calculateTotal(params) {
 }
 
 /**
- * 设备选型计算
+ * 制冷剂物性数据表 [饱和吸气状态]
+ * h1: 吸气焓值(kJ/kg), v1: 吸气比容(m³/kg)
+ */
+const REFRIGERANT_PROPS = {
+  R22: {
+    suction: [
+      { t: 5, h: 406, v: 0.056 },
+      { t: 0, h: 405, v: 0.069 },
+      { t: -5, h: 403, v: 0.080 },
+      { t: -10, h: 401, v: 0.094 },
+      { t: -15, h: 399, v: 0.112 },
+      { t: -20, h: 396, v: 0.135 },
+      { t: -25, h: 394, v: 0.165 },
+      { t: -30, h: 391, v: 0.205 },
+      { t: -35, h: 387, v: 0.260 },
+      { t: -40, h: 383, v: 0.340 }
+    ],
+    liquid: [
+      { t: 35, h: 241 }, { t: 40, h: 249 }, { t: 45, h: 257 },
+      { t: 50, h: 265 }, { t: 55, h: 273 }
+    ]
+  },
+  R507: {
+    suction: [
+      { t: 5, h: 382, v: 0.034 },
+      { t: 0, h: 380, v: 0.041 },
+      { t: -5, h: 378, v: 0.049 },
+      { t: -10, h: 376, v: 0.060 },
+      { t: -15, h: 373, v: 0.073 },
+      { t: -20, h: 370, v: 0.091 },
+      { t: -25, h: 366, v: 0.114 },
+      { t: -30, h: 362, v: 0.146 },
+      { t: -35, h: 357, v: 0.193 },
+      { t: -40, h: 351, v: 0.265 }
+    ],
+    liquid: [
+      { t: 35, h: 248 }, { t: 40, h: 256 }, { t: 45, h: 264 },
+      { t: 50, h: 272 }, { t: 55, h: 280 }
+    ]
+  }
+};
+
+// 线性插值
+function interpolate(table, temp, key) {
+  if (temp <= table[0].t) return table[0][key];
+  if (temp >= table[table.length - 1].t) return table[table.length - 1][key];
+  for (let i = 0; i < table.length - 1; i++) {
+    if (temp >= table[i + 1].t && temp <= table[i].t) {
+      const ratio = (temp - table[i + 1].t) / (table[i].t - table[i + 1].t);
+      return table[i + 1][key] + ratio * (table[i][key] - table[i + 1][key]);
+    }
+  }
+  return table[0][key];
+}
+
+/**
+ * 设备选型计算（含制冷剂、COP、排气量）
+ * 理论COP基于卡诺循环 × 压缩机效率因子（参考Bitzer/Bock实际曲线校准）
+ * 实际COP = 理论COP × 0.9（10%工程修正：电机效率、管路压降、过热损失等）
  */
 function calculateSelection(result, params) {
-  const { evapTemp, condTemp, copValue } = params;
+  const { evapTemp, condTemp, refrigerant } = params;
   const designKW = result.designKW;
-  const compressorPower = designKW / copValue;
+  const ref = REFRIGERANT_PROPS[refrigerant] || REFRIGERANT_PROPS.R507;
+
+  // 吸气状态参数
+  const h1 = interpolate(ref.suction, evapTemp, 'h');
+  const v1 = interpolate(ref.suction, evapTemp, 'v');
+  // 冷凝液焓
+  const h3 = interpolate(ref.liquid, condTemp, 'h');
+
+  // 单位质量制冷量
+  const q0 = h1 - h3; // kJ/kg
+  // 单位容积制冷量
+  const qv = q0 / v1; // kJ/m³
+
+  // 理论COP（卡诺循环 × 压缩机效率因子）
+  const tKelvinE = evapTemp + 273.15;
+  const tKelvinC = condTemp + 273.15;
+  const carnotCOP = tKelvinE / Math.max(1, tKelvinC - tKelvinE);
+  const efficiencyFactor = refrigerant === 'R22' ? 0.55 : 0.53;
+  const theoreticalCOP = carnotCOP * efficiencyFactor;
+
+  // 工程修正：理论COP × 0.9
+  const correctedCOP = theoreticalCOP * 0.9;
+
+  // 压缩机轴功率
+  const compressorPower = designKW / Math.max(0.5, correctedCOP);
+
+  // 容积效率（活塞式经验公式）
+  const volumetricEff = Math.max(0.5, 0.95 - 0.004 * (condTemp - evapTemp));
+
+  // 压缩机理论排气量 (m³/h)
+  const displacement = designKW * 3600 / (qv * volumetricEff);
+
   const fanCapacity = designKW * 1.2;
 
   return {
-    evapTemp, condTemp, cop: copValue,
-    compressorPower,
+    evapTemp, condTemp,
+    refrigerant: refrigerant || 'R507',
+    theoreticalCOP: parseFloat(theoreticalCOP.toFixed(2)),
+    correctedCOP: parseFloat(correctedCOP.toFixed(2)),
+    compressorPower: parseFloat(compressorPower.toFixed(2)),
+    displacement: parseFloat(displacement.toFixed(1)),
+    q0: parseFloat(q0.toFixed(1)),
+    qv: parseFloat(qv.toFixed(0)),
+    v1: parseFloat(v1.toFixed(4)),
+    volumetricEff: parseFloat(volumetricEff.toFixed(2)),
     suggestedCapacity: designKW,
-    fanCapacity
+    fanCapacity: parseFloat(fanCapacity.toFixed(2))
   };
 }
 

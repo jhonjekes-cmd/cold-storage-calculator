@@ -158,9 +158,11 @@ Page({
     otherMotorPower: 0,
 
     // ===== 设备选型 =====
-    evapTemp: -25,
-    condTemp: 40,
-    copValue: 2.5,
+    refrigerant: 'R507',
+    refrigerantIndex: 1,
+    refrigerantOptions: ['R22（高温库）', 'R507（中低温库）'],
+    evapTemp: -28,
+    condTemp: 45,
 
     // ===== 计算结果 =====
     envelopeTotal: 0,
@@ -192,6 +194,9 @@ Page({
     compressorPower: 0,
     suggestedCapacity: 0,
     fanSuggestion: 0,
+    theoreticalCOP: 0,
+    correctedCOP: 0,
+    displacement: 0,
 
     // 公司信息
     companyName: '青岛冷锋节能工程有限公司',
@@ -329,6 +334,14 @@ Page({
     this.calculateAll();
   },
 
+  // ===== 制冷剂选择 =====
+  onRefrigerantChange(e) {
+    const idx = parseInt(e.detail.value);
+    const ref = idx === 0 ? 'R22' : 'R507';
+    this.setData({ refrigerantIndex: idx, refrigerant: ref });
+    this.calculateAll();
+  },
+
   // ===== K值计算 =====
   updatePartKValue(part) {
     const material = this.data[`${part}Material`];
@@ -380,6 +393,9 @@ Page({
         updates.cpBelow = 1.8;
         updates.latentHeat = 0;
         updates.freezePoint = -1;
+        updates.refrigerant = 'R22';
+        updates.refrigerantIndex = 0;
+        updates.evapTemp = -12;  // 高温库：库温低10~15°C
         this.setEnvelopePreset(updates, 'pu', 100, 0);
         break;
       case 'freezing':
@@ -388,6 +404,9 @@ Page({
         updates.cpBelow = 1.7;
         updates.latentHeat = 250;
         updates.freezePoint = -1.5;
+        updates.refrigerant = 'R507';
+        updates.refrigerantIndex = 1;
+        updates.evapTemp = -28;  // 中低温库：库温低8~12°C
         this.setEnvelopePreset(updates, 'pu', 100, 0);
         break;
       case 'deepfreeze':
@@ -396,6 +415,9 @@ Page({
         updates.cpBelow = 1.6;
         updates.latentHeat = 250;
         updates.freezePoint = -1.5;
+        updates.refrigerant = 'R507';
+        updates.refrigerantIndex = 1;
+        updates.evapTemp = -38;  // 低温库：库温低6~10°C
         this.setEnvelopePreset(updates, 'pu', 150, 4);
         break;
       case 'constant':
@@ -404,9 +426,15 @@ Page({
         updates.cpBelow = 1.8;
         updates.latentHeat = 0;
         updates.freezePoint = 0;
+        updates.refrigerant = 'R22';
+        updates.refrigerantIndex = 0;
+        updates.evapTemp = -5;
         this.setEnvelopePreset(updates, 'pu', 75, 1);
         break;
     }
+    // 冷凝温度 = 室外温度 + 10°C
+    const outdoorTemp = parseFloat(this.data.outdoorTemp) || 35;
+    updates.condTemp = outdoorTemp + 10;
     this.setData(updates);
     this.updateAllKValues();
     this.updatePresetK();
@@ -515,7 +543,7 @@ Page({
       otherMotorPower: num(d.otherMotorPower),
       evapTemp: num(d.evapTemp),
       condTemp: num(d.condTemp),
-      copValue: num(d.copValue)
+      refrigerant: d.refrigerant
     };
   },
 
@@ -638,7 +666,10 @@ Page({
 
       compressorPower: selection.compressorPower.toFixed(2),
       suggestedCapacity: selection.suggestedCapacity.toFixed(2),
-      fanSuggestion: selection.fanCapacity.toFixed(2)
+      fanSuggestion: selection.fanCapacity.toFixed(2),
+      theoreticalCOP: selection.theoreticalCOP.toFixed(2),
+      correctedCOP: selection.correctedCOP.toFixed(2),
+      displacement: selection.displacement.toFixed(1)
     });
 
     // 保存结果供导出
@@ -692,10 +723,13 @@ Page({
   设计冷量（含${params.safetyFactor}%安全系数）：${result.designKW.toFixed(2)} kW
 
 五、设备选型参考
+  制冷剂类型：${selection.refrigerant}
   蒸发温度：${selection.evapTemp}℃
   冷凝温度：${selection.condTemp}℃
-  COP：${selection.cop}
+  理论COP：${selection.theoreticalCOP}
+  实际COP（90%修正）：${selection.correctedCOP}
   压缩机轴功率：${selection.compressorPower.toFixed(2)} kW
+  压缩机排气量：${selection.displacement.toFixed(1)} m³/h
   建议制冷量：${selection.suggestedCapacity.toFixed(2)} kW
   冷风机建议：${selection.fanCapacity.toFixed(2)} kW
 

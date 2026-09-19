@@ -575,22 +575,32 @@
       <!-- 设备选型 -->
       <view class="selection-box">
         <view class="section-title">🔧 制冷设备选型参考</view>
-        <view class="form-item">
-          <view class="form-label">蒸发温度 (℃)</view>
-          <input class="input" type="digit" value="{{evapTemp}}" data-field="evapTemp" bindinput="onInput" />
-          <view class="form-tip">通常比库温低7~10℃</view>
-        </view>
-        <view class="form-item">
-          <view class="form-label">冷凝温度 (℃)</view>
-          <input class="input" type="digit" value="{{condTemp}}" data-field="condTemp" bindinput="onInput" />
-        </view>
-        <view class="form-item">
-          <view class="form-label">制冷系数 COP（参考）</view>
-          <input class="input" type="digit" value="{{copValue}}" data-field="copValue" bindinput="onInput" />
+
+        <view class="preset-box">
+          <view class="form-item">
+            <view class="form-label">制冷剂类型</view>
+            <picker mode="selector" range="{{refrigerantOptions}}" value="{{refrigerantIndex}}" bindchange="onRefrigerantChange">
+              <view class="picker-input">{{refrigerantOptions[refrigerantIndex]}}</view>
+            </picker>
+          </view>
+          <view class="form-item">
+            <view class="form-label">蒸发温度 (℃)</view>
+            <input class="input" type="digit" value="{{evapTemp}}" data-field="evapTemp" bindinput="onInput" />
+            <view class="form-tip">高温库比库温低10~15℃，中低温库低8~12℃</view>
+          </view>
+          <view class="form-item">
+            <view class="form-label">冷凝温度 (℃)</view>
+            <input class="input" type="digit" value="{{condTemp}}" data-field="condTemp" bindinput="onInput" />
+            <view class="form-tip">默认=室外温度+10℃，可修改</view>
+          </view>
         </view>
 
         <view class="info-box">
-          <view class="info-row"><text class="info-label">所需压缩机轴功率：</text><text class="info-value">{{compressorPower}} kW</text></view>
+          <view class="section-subtitle">压缩机选型计算结果</view>
+          <view class="info-row"><text class="info-label">理论能效比 COP：</text><text class="info-value">{{theoreticalCOP}}</text></view>
+          <view class="info-row"><text class="info-label">实际能效比（90%修正）：</text><text class="info-value">{{correctedCOP}}</text></view>
+          <view class="info-row"><text class="info-label">压缩机轴功率：</text><text class="info-value">{{compressorPower}} kW</text></view>
+          <view class="info-row"><text class="info-label">压缩机排气量：</text><text class="info-value">{{displacement}} m³/h</text></view>
           <view class="info-row"><text class="info-label">建议配置制冷量：</text><text class="info-value">{{suggestedCapacity}} kW</text></view>
           <view class="info-row"><text class="info-label">冷风机建议配置：</text><text class="info-value">{{fanSuggestion}} kW（1.2倍余量）</text></view>
         </view>

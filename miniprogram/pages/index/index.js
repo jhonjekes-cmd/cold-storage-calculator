@@ -389,11 +389,13 @@ Page({
     const L = parseFloat(this.data.roomLength) || 0;
     const W = parseFloat(this.data.roomWidth) || 0;
     const H = parseFloat(this.data.roomHeight) || 0;
+    const partArea = parseFloat(this.data.partitionArea) || 0;
 
     const volume = L * W * H;
     const totalArea = 2 * (L * W + L * H + W * H);
     const roofArea = L * W;
-    const wallArea = 2 * (L + W) * H;
+    // 外墙面积扣除隔墙部分，与calculator.js保持一致
+    const wallArea = Math.max(0, 2 * (L + W) * H - partArea);
 
     this.setData({
       roomVolume: parseFloat(volume.toFixed(1)),

@@ -65,8 +65,9 @@ function calculateEnvelope(params) {
 
   const roofArea = roomLength * roomWidth;
   const floorArea = roomLength * roomWidth;
-  const wallArea = 2 * (roomLength + roomWidth) * roomHeight;
   const partArea = partitionArea || 0;
+  // 外墙面积 = 四面墙总面积 - 隔墙面积（隔墙部分不再按外墙计算，避免重复）
+  const wallArea = Math.max(0, 2 * (roomLength + roomWidth) * roomHeight - partArea);
 
   const outdoorDelta = outdoorTemp - indoorTemp;
   const adjacentDelta = Math.max(0, (adjacentTemp || 0) - indoorTemp);
@@ -150,6 +151,7 @@ function calculateVentilation(params) {
 
   const dailyHeat = airChanges * roomVolume * airDensity * deltaH;
   const avgLoad = dailyHeat * 1000 / (24 * 3600);
+  const timeFactor = ventTime / 24;
   const peakLoad = dailyHeat * 1000 / (ventTime * 3600);
 
   return {

@@ -488,7 +488,7 @@
           <view class="form-item">
             <view class="form-label">冷凝温度 (℃)</view>
             <input class="input" type="digit" value="{{condTemp}}" data-field="condTemp" bindinput="onInput" />
-            <view class="form-tip">默认=室外温度+10℃，可修改</view>
+            <view class="form-tip">风冷45℃ / 水冷40℃ / 蒸发冷35℃（随冷却方式自动填入，可修改）</view>
           </view>
         </view>
         <view class="info-box">

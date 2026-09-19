@@ -159,14 +159,9 @@ function calculateVentilation(params) {
   const peakLoad = Fd * v * rho * deltaH * 1000 * totalFactor;
 
   return {
-    doorArea: Fd,
-    dailyAirVolume: dailyAirVolume,
-    hOut: hOut,
-    hIn: hIn,
-    deltaH: deltaH,
-    avgLoad: avgLoad,
-    peakLoad: peakLoad,
-    total: avgLoad
+    doorArea: Fd, dailyAirVolume: dailyAirVolume,
+    hOut: hOut, hIn: hIn, deltaH: deltaH,
+    avgLoad: avgLoad, peakLoad: peakLoad, total: avgLoad
   };
 }
 
@@ -284,8 +279,65 @@ function interpolate(table, temp, key) {
 }
 
 /**
- * 设备选型计算（实际蒸气压缩循环，吸气过热度8℃）
+ * 设备选型计算
+ * 基于Bock/Bitzer实测压缩机性能数据（EN12900标准）
+ * 吸气过热度8℃，实际COP查表插值
  */
+
+// Bock HGX5系列半封闭活塞压缩机实测COP数据（EN12900: 20℃吸气，无过冷）
+const R507_COP_TABLE = {
+  evapTemps: [-5, -10, -15, -20, -25, -30, -35, -40, -45],
+  condTemps: [30, 40, 50],
+  cop: [
+    [3.64, 2.67, 1.93],
+    [3.21, 2.38, 1.74],
+    [2.82, 2.12, 1.58],
+    [2.48, 1.89, 1.42],
+    [2.18, 1.69, 1.29],
+    [1.91, 1.50, 1.15],
+    [1.67, 1.33, 1.02],
+    [1.45, 1.15, 0.90],
+    [1.24, 0.95, 0.78]
+  ]
+};
+
+const R22_COP_TABLE = {
+  evapTemps: [-5, -10, -15, -20, -25, -30, -35],
+  condTemps: [30, 40, 50],
+  cop: [
+    [4.74, 3.59, 2.71],
+    [4.02, 3.09, 2.37],
+    [3.38, 2.64, 2.06],
+    [2.82, 2.24, 1.78],
+    [2.32, 1.88, 1.52],
+    [1.87, 1.54, 1.27],
+    [1.45, 1.22, 1.00]
+  ]
+};
+
+function lookupCOP(table, evapTemp, condTemp) {
+  const et = table.evapTemps;
+  const ct = table.condTemps;
+  const cop = table.cop;
+  const eT = Math.max(et[et.length - 1], Math.min(et[0], evapTemp));
+  const cT = Math.max(ct[0], Math.min(ct[ct.length - 1], condTemp));
+  let ei = 0;
+  for (let i = 0; i < et.length - 1; i++) {
+    if (eT <= et[i] && eT >= et[i + 1]) { ei = i; break; }
+  }
+  let ci = 0;
+  for (let j = 0; j < ct.length - 1; j++) {
+    if (cT >= ct[j] && cT <= ct[j + 1]) { ci = j; break; }
+  }
+  const eRatio = (et[ei] - eT) / (et[ei] - et[ei + 1]);
+  const cRatio = (cT - ct[ci]) / (ct[ci + 1] - ct[ci]);
+  const c00 = cop[ei][ci], c01 = cop[ei][ci + 1];
+  const c10 = cop[ei + 1][ci], c11 = cop[ei + 1][ci + 1];
+  const top = c00 + cRatio * (c01 - c00);
+  const bot = c10 + cRatio * (c11 - c10);
+  return top + eRatio * (bot - top);
+}
+
 function calculateSelection(result, params) {
   const { evapTemp, condTemp, refrigerant, compressorType, hasEconomizer, coolingType } = params;
   const designKW = result.designKW;
@@ -297,35 +349,35 @@ function calculateSelection(result, params) {
 
   const h1_sat = interpolate(ref.suction, evapTemp, 'h');
   const v1_sat = interpolate(ref.suction, evapTemp, 'v');
-  const cp_v = ref.cpVapor;
+  const cp_v = ref.cpVapor || 0.65;
   const h1 = h1_sat + cp_v * superheat;
   const v1 = v1_sat * (T_suction_K / (evapTemp + 273.15));
-
   const h3 = interpolate(ref.liquid, condTemp, 'h');
   const q0 = h1 - h3;
   const qv = q0 / v1;
 
-  const p1 = interpolate(ref.suction, evapTemp, 'p');
-  const p2 = interpolate(ref.liquid, condTemp, 'p');
-  const pressureRatio = p2 / Math.max(0.5, p1);
-  const k = ref.isentropicK;
-  const T2s_K = T_suction_K * Math.pow(pressureRatio, (k - 1) / k);
-  const h2s_minus_h1 = cp_v * (T2s_K - T_suction_K);
+  const copTable = refrigerant === 'R22' ? R22_COP_TABLE : R507_COP_TABLE;
+  let baseCOP = lookupCOP(copTable, evapTemp, condTemp);
 
-  let eta_is = compressorType === 'screw' ? 0.75 : 0.72;
-  const w_comp = h2s_minus_h1 / eta_is;
-  const cycleCOP = q0 / w_comp;
+  const stdSuction = refrigerant === 'R22' ? 25 : 20;
+  const superheatDiff = (stdSuction - suctionTemp) / 10;
+  const superheatCorrection = Math.max(0.85, 1.0 - superheatDiff * 0.025);
+  baseCOP = baseCOP * superheatCorrection;
+
+  if (compressorType === 'screw') {
+    baseCOP = baseCOP * 1.05;
+  }
 
   let econBoost = 1.0;
   let econDesc = '无经济器';
   if (hasEconomizer) {
     if (evapTemp >= -5) { econBoost = 1.05; econDesc = '经济器(+5%)'; }
-    else if (evapTemp >= -15) { econBoost = 1.10; econDesc = '经济器(+10%)'; }
-    else if (evapTemp >= -25) { econBoost = 1.15; econDesc = '经济器(+15%)'; }
-    else { econBoost = 1.20; econDesc = '经济器(+20%)'; }
+    else if (evapTemp >= -15) { econBoost = 1.12; econDesc = '经济器(+12%)'; }
+    else if (evapTemp >= -25) { econBoost = 1.18; econDesc = '经济器(+18%)'; }
+    else { econBoost = 1.25; econDesc = '经济器(+25%)'; }
   }
 
-  const actualCOP = cycleCOP * econBoost * 0.9;
+  const actualCOP = baseCOP * econBoost;
   const compressorPower = designKW / Math.max(0.5, actualCOP);
 
   let volumetricEff;
@@ -336,8 +388,8 @@ function calculateSelection(result, params) {
   }
 
   const displacement = designKW * 3600 / (qv * volumetricEff);
-
   const condenserHeat = designKW + compressorPower;
+
   let condenserType, condenserFactor, condenserCapacity;
   if (coolingType === 'water') {
     condenserType = '水冷冷凝器'; condenserFactor = 1.5;
@@ -365,7 +417,6 @@ function calculateSelection(result, params) {
     qv: parseFloat(qv.toFixed(0)),
     v1: parseFloat(v1.toFixed(4)),
     volumetricEff: parseFloat(volumetricEff.toFixed(2)),
-    pressureRatio: parseFloat(pressureRatio.toFixed(2)),
     suggestedCapacity: designKW,
     fanCapacity: parseFloat(fanCapacity.toFixed(2)),
     condenserHeat: parseFloat(condenserHeat.toFixed(2)),

@@ -105,7 +105,8 @@ Page({
     coolingType: 'air', coolingTypeIndex: 0,
     coolingTypeOptions: ['风冷冷凝器', '水冷冷凝器', '蒸发式冷凝器'],
     hasEconomizer: false,
-    evapTemp: -28, condTemp: 45,
+    evapTemp: -28,
+    condTemp: 45,
 
     envelopeTotal: 0, envelopeTotalKW: 0, envelopeRows: [],
     goodsTotal: 0, goodsTotalKW: 0,
@@ -239,7 +240,12 @@ Page({
   onCoolingTypeChange(e) {
     const idx = parseInt(e.detail.value);
     const types = ['air', 'water', 'evap'];
-    this.setData({ coolingTypeIndex: idx, coolingType: types[idx] });
+    const condTemps = [45, 40, 35];
+    this.setData({
+      coolingTypeIndex: idx,
+      coolingType: types[idx],
+      condTemp: condTemps[idx]
+    });
     this.calculateAll();
   },
 

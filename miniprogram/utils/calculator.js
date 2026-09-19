@@ -142,22 +142,20 @@ function calculateVentilation(params) {
     indoorTemp, indoorHumidity,
     outdoorTemp, outdoorHumidity,
     doorWidth, doorHeight, doorOpens, doorDuration,
-    hasAirCurtain, hasBufferRoom, hasImpactDoor
+    hasAirCurtain, hasBufferRoom
   } = params;
 
   // 门洞面积
   const Fd = (doorWidth || 0) * (doorHeight || 0);
 
   // 基础渗透风速 (m/s) —— 经验值：普通门约1.0 m/s
-  let v = 1.0;
-  // 防撞门/快速卷帘门：开启时间短，空气交换少，风速按0.6计
-  if (hasImpactDoor) v = 0.6;
+  const v = 1.0;
 
-  // 风幕修正：有效阻隔约70%冷热交换
+  // 风幕修正：实际工程中风幕仅减少约10%冷热交换
   let curtainFactor = 1.0;
-  if (hasAirCurtain) curtainFactor = 0.3;
+  if (hasAirCurtain) curtainFactor = 0.9;
 
-  // 缓冲间修正：有效阻隔约80%冷热交换
+  // 缓冲间修正（含防撞门/快速卷帘门）：有效阻隔约80%冷热交换
   let bufferFactor = 1.0;
   if (hasBufferRoom) bufferFactor = 0.2;
 

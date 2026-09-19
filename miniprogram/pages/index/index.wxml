@@ -385,17 +385,12 @@
       <view class="form-item">
         <view class="form-label">是否有风幕</view>
         <switch checked="{{hasAirCurtain}}" data-field="hasAirCurtain" bindchange="onToggleSwitch" color="#2a5298" />
-        <view class="form-tip">风幕可阻隔约70%冷热交换</view>
+        <view class="form-tip">风幕可减少约10%冷热交换</view>
       </view>
       <view class="form-item">
-        <view class="form-label">是否有缓冲间</view>
+        <view class="form-label">缓冲间（含防撞门/快速卷帘门）</view>
         <switch checked="{{hasBufferRoom}}" data-field="hasBufferRoom" bindchange="onToggleSwitch" color="#2a5298" />
         <view class="form-tip">缓冲间可阻隔约80%冷热交换</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">防撞门/快速卷帘门</view>
-        <switch checked="{{hasImpactDoor}}" data-field="hasImpactDoor" bindchange="onToggleSwitch" color="#2a5298" />
-        <view class="form-tip">开启时间短，空气交换量减少40%</view>
       </view>
 
       <view class="info-box">

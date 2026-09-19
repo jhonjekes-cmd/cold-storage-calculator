@@ -1,0 +1,79 @@
+/* 冷库冷量计算小程序 - 主页面样式 */
+.page { padding-bottom: 40rpx; }
+.header { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 40rpx 30rpx; text-align: center; color: #fff; }
+.header-title { font-size: 40rpx; font-weight: bold; margin-bottom: 12rpx; }
+.header-subtitle { font-size: 26rpx; opacity: 0.85; }
+.tab-bar { background: #f0f2f5; border-bottom: 2rpx solid #e0e0e0; white-space: nowrap; }
+.tab-inner { display: inline-flex; padding: 0 10rpx; }
+.tab-item { display: inline-block; padding: 24rpx 28rpx; font-size: 26rpx; color: #666; border-bottom: 6rpx solid transparent; transition: all 0.3s; }
+.tab-item.active { color: #2a5298; font-weight: 600; border-bottom-color: #2a5298; background: #fff; }
+.tab-content { padding: 24rpx; }
+.card { background: #fff; border-radius: 16rpx; padding: 30rpx; margin-bottom: 24rpx; box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.06); }
+.card-title { font-size: 34rpx; color: #1e3c72; font-weight: 600; margin-bottom: 20rpx; padding-bottom: 16rpx; border-bottom: 2rpx solid #e8eaed; }
+.desc { font-size: 24rpx; color: #888; margin-bottom: 24rpx; padding: 16rpx 20rpx; background: #f8f9fa; border-left: 6rpx solid #2a5298; border-radius: 8rpx; }
+.form-item { margin-bottom: 24rpx; }
+.form-label { font-size: 26rpx; color: #555; margin-bottom: 10rpx; font-weight: 500; }
+.input { padding: 18rpx 20rpx; border: 2rpx solid #d0d5dd; border-radius: 12rpx; font-size: 28rpx; background: #fff; }
+.picker-input { padding: 18rpx 20rpx; border: 2rpx solid #d0d5dd; border-radius: 12rpx; font-size: 28rpx; background: #fff; color: #333; }
+.form-tip { font-size: 22rpx; color: #999; margin-top: 8rpx; }
+.info-box { margin-top: 24rpx; padding: 24rpx; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-radius: 12rpx; }
+.section-subtitle { font-size: 28rpx; color: #1565c0; font-weight: 600; margin-bottom: 12rpx; }
+.info-row { font-size: 26rpx; margin: 8rpx 0; }
+.info-label { color: #1976d2; }
+.info-value { color: #0d47a1; font-weight: 600; }
+.result-summary { margin-top: 30rpx; padding: 28rpx; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 12rpx; }
+.result-title { color: #2e7d32; font-size: 30rpx; font-weight: 600; margin-bottom: 12rpx; }
+.breakdown { margin-top: 16rpx; padding-top: 16rpx; border-top: 2rpx dashed #a5d6a7; }
+.breakdown-item { font-size: 24rpx; color: #388e3c; margin: 8rpx 0; }
+.section-title { font-size: 30rpx; color: #2a5298; font-weight: 600; margin: 30rpx 0 20rpx; }
+.preset-box { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border-radius: 16rpx; padding: 24rpx; margin-bottom: 24rpx; border: 2rpx solid #a5d6a7; }
+.preset-title { color: #2e7d32; font-size: 28rpx; font-weight: 600; margin-bottom: 20rpx; }
+.k-preview { margin-top: 20rpx; padding: 16rpx 20rpx; background: rgba(255,255,255,0.7); border-radius: 12rpx; font-size: 26rpx; color: #1b5e20; text-align: center; }
+.k-value { color: #2e7d32; font-size: 32rpx; font-weight: 700; }
+.config-row { background: #f8f9fa; border-radius: 12rpx; padding: 24rpx; border: 2rpx solid #e8eaed; margin-bottom: 20rpx; }
+.config-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20rpx; padding-bottom: 16rpx; border-bottom: 2rpx dashed #d0d5dd; }
+.config-title { font-size: 28rpx; font-weight: 600; color: #1e3c72; }
+.config-area { font-size: 24rpx; color: #2a5298; font-weight: 600; }
+.table-wrap { margin-top: 20rpx; overflow-x: auto; }
+.table-header { display: flex; background: #2a5298; border-radius: 8rpx 8rpx 0 0; padding: 16rpx 8rpx; }
+.th { flex: 1; font-size: 22rpx; color: #fff; text-align: center; font-weight: 500; }
+.th-name { flex: 1.2; }
+.table-row { display: flex; padding: 14rpx 8rpx; border-bottom: 2rpx solid #e8eaed; background: #fff; }
+.td { flex: 1; font-size: 22rpx; text-align: center; color: #555; }
+.td-name { flex: 1.2; font-weight: 500; color: #333; }
+.td-mat { flex: 1.3; font-size: 20rpx; }
+.td-load { font-weight: 600; color: #1e3c72; }
+.table-total { display: flex; justify-content: space-between; align-items: center; background: #e3f2fd; padding: 20rpx; border-radius: 0 0 8rpx 8rpx; border-top: 4rpx solid #2a5298; }
+.total-label { font-size: 26rpx; font-weight: 600; color: #1565c0; }
+.total-value { font-size: 26rpx; font-weight: 700; color: #0d47a1; }
+.result-main { background: #f8f9fa; border-radius: 16rpx; padding: 24rpx; margin-bottom: 24rpx; }
+.result-row { display: flex; align-items: center; padding: 20rpx 0; border-bottom: 2rpx solid #e8eaed; }
+.row-label { flex: 1; font-size: 28rpx; color: #555; }
+.row-value { font-size: 30rpx; font-weight: 600; color: #1e3c72; min-width: 140rpx; text-align: right; }
+.row-percent { min-width: 80rpx; text-align: right; font-size: 24rpx; color: #888; margin-left: 20rpx; }
+.total-row { background: #e3f2fd; margin: 16rpx -16rpx; padding: 20rpx 16rpx; border-radius: 12rpx; border-bottom: none; }
+.total-row .row-label, .total-row .row-value { font-size: 32rpx; color: #1565c0; }
+.grand-total { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); margin: 16rpx -16rpx; padding: 24rpx 16rpx; border-radius: 12rpx; border-bottom: none; }
+.grand-total .row-label, .grand-total .row-value { color: #fff; font-size: 34rpx; font-weight: 700; }
+.chart-box { background: #f8f9fa; border-radius: 16rpx; padding: 24rpx; margin-bottom: 24rpx; }
+.bar-chart { display: flex; flex-direction: column; gap: 20rpx; }
+.bar-row { display: flex; align-items: center; gap: 16rpx; }
+.bar-label { width: 160rpx; font-size: 24rpx; color: #555; text-align: right; }
+.bar-track { flex: 1; height: 40rpx; background: #e8eaed; border-radius: 20rpx; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 20rpx; display: flex; align-items: center; justify-content: flex-end; padding-right: 16rpx; min-width: 80rpx; }
+.bar-text { color: #fff; font-size: 20rpx; font-weight: 600; }
+.selection-box { background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); border-radius: 16rpx; padding: 24rpx; margin-bottom: 24rpx; }
+.action-buttons { display: flex; gap: 20rpx; flex-wrap: wrap; justify-content: center; margin-top: 20rpx; }
+.btn { padding: 22rpx 40rpx; border-radius: 12rpx; font-size: 28rpx; font-weight: 500; text-align: center; border: none; }
+.btn-primary { background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%); color: #fff; }
+.btn-secondary { background: #f0f2f5; color: #555; border: 2rpx solid #d0d5dd; }
+.btn-block { display: block; width: 100%; margin-top: 10rpx; }
+.footer { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 40rpx 30rpx 30rpx; color: #fff; text-align: center; margin-top: 20rpx; }
+.footer-company { margin-bottom: 20rpx; }
+.footer-name { font-size: 34rpx; font-weight: 700; margin-bottom: 10rpx; }
+.footer-desc { font-size: 24rpx; opacity: 0.8; }
+.footer-contact { margin: 16rpx 0; }
+.footer-phone { font-size: 30rpx; font-weight: 600; color: #90caf9; }
+.footer-address { font-size: 24rpx; opacity: 0.8; margin: 8rpx 0; }
+.footer-version { font-size: 22rpx; opacity: 0.6; margin-top: 20rpx; padding-top: 20rpx; border-top: 2rpx solid rgba(255,255,255,0.2); }
+.footer-disclaimer { font-size: 22rpx; color: #ffcc80; font-style: italic; margin-top: 8rpx; }

@@ -12,7 +12,7 @@ Page({
       { key: 'basic', label: '基本信息' },
       { key: 'envelope', label: '围护结构' },
       { key: 'goods', label: '货物负荷' },
-      { key: 'ventilation', label: '通风换气' },
+      { key: 'ventilation', label: '开门渗透' },
       { key: 'operation', label: '操作管理' },
       { key: 'motor', label: '电机负荷' },
       { key: 'result', label: '计算结果' }
@@ -112,10 +112,16 @@ Page({
     containerCp: 0.5,
     containerTimes: 0,
 
-    // ===== 通风换气 =====
-    airChanges: 2,
-    airDensity: 1.2,
-    ventTime: 2,
+    // ===== 开门渗透（原通风换气）=====
+    doorWidth: 2.0,
+    doorHeight: 2.5,
+    doorOpens: 30,
+    doorDuration: 30,
+    hasAirCurtain: false,
+    hasBufferRoom: false,
+    hasImpactDoor: false,
+    doorArea: 5.0,
+    dailyAirVolume: 0,
     outdoorEnthalpy: 0,
     indoorEnthalpy: 0,
     enthalpyDiff: 0,
@@ -129,10 +135,6 @@ Page({
     equipmentPower: 1.5,
     equipmentDiversity: 0.5,
     equipmentTime: 4,
-    doorArea: 4,
-    doorOpens: 20,
-    doorDuration: 60,
-    doorK: 15,
 
     // ===== 电机热负荷 =====
     fanMotorPower: 2.2,
@@ -284,6 +286,13 @@ Page({
       floorTypeIndex: idx,
       floorType: this.data.floorTypeValues[idx]
     });
+    this.calculateAll();
+  },
+
+  // ===== 开关门修正项切换 =====
+  onToggleSwitch(e) {
+    const field = e.currentTarget.dataset.field;
+    this.setData({ [field]: e.detail.value });
     this.calculateAll();
   },
 
@@ -452,9 +461,13 @@ Page({
       containerMass: num(d.containerMass),
       containerCp: num(d.containerCp),
       containerTimes: num(d.containerTimes),
-      airChanges: num(d.airChanges),
-      airDensity: num(d.airDensity),
-      ventTime: num(d.ventTime),
+      doorWidth: num(d.doorWidth),
+      doorHeight: num(d.doorHeight),
+      doorOpens: num(d.doorOpens),
+      doorDuration: num(d.doorDuration),
+      hasAirCurtain: d.hasAirCurtain,
+      hasBufferRoom: d.hasBufferRoom,
+      hasImpactDoor: d.hasImpactDoor,
       personCount: num(d.personCount),
       personHeat: num(d.personHeat),
       personTime: num(d.personTime),
@@ -463,10 +476,6 @@ Page({
       equipmentPower: num(d.equipmentPower),
       equipmentDiversity: num(d.equipmentDiversity),
       equipmentTime: num(d.equipmentTime),
-      doorArea: num(d.doorArea),
-      doorOpens: num(d.doorOpens),
-      doorDuration: num(d.doorDuration),
-      doorK: num(d.doorK),
       fanMotorPower: num(d.fanMotorPower),
       motorEfficiency: num(d.motorEfficiency),
       motorTime: num(d.motorTime),
@@ -534,7 +543,7 @@ Page({
       result.operation.total,
       result.motor.total
     ];
-    const labels = ['围护结构', '货物负荷', '通风换气', '操作管理', '电机热负荷'];
+    const labels = ['围护结构', '货物负荷', '开门渗透', '操作管理', '电机热负荷'];
     const colors = ['#2a5298', '#e74c3c', '#27ae60', '#f39c12', '#9b59b6'];
     const total = result.totalW;
 
@@ -560,6 +569,8 @@ Page({
       goodsTotal: result.goods.total.toFixed(1),
       goodsTotalKW: (result.goods.total / 1000).toFixed(2),
 
+      doorArea: result.ventilation.doorArea.toFixed(2),
+      dailyAirVolume: result.ventilation.dailyAirVolume.toFixed(0),
       outdoorEnthalpy: result.ventilation.hOut.toFixed(2),
       indoorEnthalpy: result.ventilation.hIn.toFixed(2),
       enthalpyDiff: result.ventilation.deltaH.toFixed(2),
@@ -638,7 +649,7 @@ Page({
 三、各项冷负荷
   ① 围护结构：${(result.envelope.total/1000).toFixed(2)} kW
   ② 货物冷负荷：${(result.goods.total/1000).toFixed(2)} kW
-  ③ 通风换气：${(result.ventilation.total/1000).toFixed(2)} kW
+  ③ 开门渗透：${(result.ventilation.total/1000).toFixed(2)} kW
   ④ 操作管理：${(result.operation.total/1000).toFixed(2)} kW
   ⑤ 电机热负荷：${(result.motor.total/1000).toFixed(2)} kW
 

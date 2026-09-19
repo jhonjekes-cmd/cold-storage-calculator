@@ -134,31 +134,62 @@ function calculateGoods(params) {
 }
 
 /**
- * 通风换气冷负荷
+ * 开门渗透冷负荷计算（基于门洞尺寸+开门频次+修正系数）
+ * Q = F_d × v × ρ × Δh × (n × τ / 86400) × 修正系数
  */
 function calculateVentilation(params) {
   const {
-    roomLength, roomWidth, roomHeight,
     indoorTemp, indoorHumidity,
     outdoorTemp, outdoorHumidity,
-    airChanges, airDensity, ventTime
+    doorWidth, doorHeight, doorOpens, doorDuration,
+    hasAirCurtain, hasBufferRoom, hasImpactDoor
   } = params;
 
-  const roomVolume = roomLength * roomWidth * roomHeight;
+  // 门洞面积
+  const Fd = (doorWidth || 0) * (doorHeight || 0);
+
+  // 基础渗透风速 (m/s) —— 经验值：普通门约1.0 m/s
+  let v = 1.0;
+  // 防撞门/快速卷帘门：开启时间短，空气交换少，风速按0.6计
+  if (hasImpactDoor) v = 0.6;
+
+  // 风幕修正：有效阻隔约70%冷热交换
+  let curtainFactor = 1.0;
+  if (hasAirCurtain) curtainFactor = 0.3;
+
+  // 缓冲间修正：有效阻隔约80%冷热交换
+  let bufferFactor = 1.0;
+  if (hasBufferRoom) bufferFactor = 0.2;
+
+  // 总修正系数
+  const totalFactor = curtainFactor * bufferFactor;
+
+  // 焓差
   const hOut = calculateEnthalpy(outdoorTemp, outdoorHumidity);
   const hIn = calculateEnthalpy(indoorTemp, indoorHumidity);
   const deltaH = Math.max(0, hOut - hIn);
 
-  const dailyHeat = airChanges * roomVolume * airDensity * deltaH;
-  const avgLoad = dailyHeat * 1000 / (24 * 3600);
-  const timeFactor = ventTime / 24;
-  const peakLoad = dailyHeat * 1000 / (ventTime * 3600);
+  // 空气密度 (kg/m³)
+  const rho = 1.2;
+
+  // 每日渗透空气量 (m³/day) = 门洞面积 × 风速 × 每日开门秒数 × 修正系数
+  const dailyAirVolume = Fd * v * (doorOpens * doorDuration) * totalFactor;
+
+  // 每日热负荷 (kJ/day) = 空气量 × 密度 × 焓差
+  const dailyHeat = dailyAirVolume * rho * deltaH;
+
+  // 平均热负荷 (W)
+  const avgLoad = dailyHeat * 1000 / 86400;
+
+  // 峰值热负荷（开门瞬间）(W)
+  const peakLoad = Fd * v * rho * deltaH * 1000 * totalFactor;
 
   return {
+    doorArea: Fd,
+    dailyAirVolume: dailyAirVolume,
     hOut: hOut,
     hIn: hIn,
     deltaH: deltaH,
-    roomVolume: roomVolume,
     avgLoad: avgLoad,
     peakLoad: peakLoad,
     total: avgLoad
@@ -166,36 +197,29 @@ function calculateVentilation(params) {
 }
 
 /**
- * 操作管理冷负荷
+ * 操作管理冷负荷（人员+照明+设备）
  */
 function calculateOperation(params) {
   const {
     roomLength, roomWidth,
     personCount, personHeat, personTime,
     lightingDensity, lightingTime,
-    equipmentPower, equipmentDiversity, equipmentTime,
-    doorArea, doorOpens, doorDuration, doorK,
-    indoorTemp, outdoorTemp
+    equipmentPower, equipmentDiversity, equipmentTime
   } = params;
 
   const floorArea = roomLength * roomWidth;
-  const deltaT = outdoorTemp - indoorTemp;
 
   const personTotal = personCount * personHeat * (personTime / 24);
   const lightingTotal = lightingDensity * floorArea * (lightingTime / 24);
   const equipmentTotal = equipmentPower * 1000 * equipmentDiversity * (equipmentTime / 24);
 
-  const doorOpenSecondsPerDay = doorOpens * doorDuration;
-  const doorTimeRatio = doorOpenSecondsPerDay / (24 * 3600);
-  const doorTotal = doorK * doorArea * deltaT * doorTimeRatio;
-
-  const total = personTotal + lightingTotal + equipmentTotal + doorTotal;
+  const total = personTotal + lightingTotal + equipmentTotal;
 
   return {
     person: personTotal,
     lighting: lightingTotal,
     equipment: equipmentTotal,
-    door: doorTotal,
+    door: 0,
     total: total
   };
 }

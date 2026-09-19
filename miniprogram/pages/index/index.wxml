@@ -1,622 +1,823 @@
-<!-- 冷库冷量计算小程序 - 主页面 -->
-<view class="page">
-  <!-- 头部 -->
-  <view class="header">
-    <view class="header-title">❄️ 冷库冷量计算软件</view>
-    <view class="header-subtitle">专业冷库热负荷计算 · 制冷设备选型参考</view>
-  </view>
+/**
+ * 冷库冷量计算小程序 - 主页面逻辑
+ * 青岛冷锋节能工程有限公司
+ */
+const calc = require('../../utils/calculator.js');
 
-  <!-- 标签栏 -->
-  <scroll-view scroll-x class="tab-bar" enhanced show-scrollbar="{{false}}">
-    <view class="tab-inner">
-      <view
-        wx:for="{{tabs}}"
-        wx:key="key"
-        class="tab-item {{activeTab === item.key ? 'active' : ''}}"
-        data-tab="{{item.key}}"
-        bindtap="switchTab"
-      >{{item.label}}</view>
-    </view>
-  </scroll-view>
+Page({
+  data: {
+    // 标签页
+    activeTab: 'basic',
+    tabs: [
+      { key: 'basic', label: '基本信息' },
+      { key: 'envelope', label: '围护结构' },
+      { key: 'goods', label: '货物负荷' },
+      { key: 'ventilation', label: '开门渗透' },
+      { key: 'operation', label: '操作管理' },
+      { key: 'motor', label: '电机负荷' },
+      { key: 'result', label: '计算结果' }
+    ],
 
-  <!-- ===== 基本信息 ===== -->
-  <view class="tab-content" wx:if="{{activeTab === 'basic'}}">
-    <view class="card">
-      <view class="card-title">库房基本信息</view>
+    // ===== 基本信息 =====
+    roomName: '1#冷冻库',
+    roomType: 'freezing',
+    roomTypeIndex: 1,
+    roomTypeOptions: ['冷藏库（0℃以上）', '冷冻库（-18℃）', '速冻库（-30℃以下）', '恒温库', '自定义'],
+    roomTypeValues: ['cooling', 'freezing', 'deepfreeze', 'constant', 'custom'],
+    indoorTemp: -18,
+    outdoorTemp: 35,
+    outdoorHumidity: 80,
+    indoorHumidity: 85,
+    roomLength: 20,
+    roomWidth: 10,
+    roomHeight: 6,
+    safetyFactor: 10,
+    roomVolume: 1200,
+    totalArea: 760,
 
-      <view class="form-item">
-        <view class="form-label">库房名称</view>
-        <input class="input" value="{{roomName}}" data-field="roomName" bindinput="onTextInput" placeholder="输入库房名称" />
-      </view>
+    // ===== 围护结构 - 预设 =====
+    presetMaterial: 'pu',
+    presetMaterialIndex: 0,
+    presetThickness: 100,
+    presetThicknessIndex: 2,
+    presetK: 0.225,
+    materialOptions: [
+      { value: 'pu', label: '聚氨酯板（PU）λ=0.023' },
+      { value: 'pir', label: 'PIR板 λ=0.022' },
+      { value: 'eps', label: '聚苯板（EPS）λ=0.040' },
+      { value: 'xps', label: '挤塑板（XPS）λ=0.030' },
+      { value: 'rockwool', label: '岩棉夹芯板 λ=0.040' },
+      { value: 'stainless_steel', label: '不锈钢聚氨酯板 λ=0.023' }
+    ],
+    thicknessOptions: [50, 75, 100, 120, 150, 175, 200, 250],
 
-      <view class="form-item">
-        <view class="form-label">库房类型</view>
-        <picker mode="selector" range="{{roomTypeOptions}}" value="{{roomTypeIndex}}" bindchange="onRoomTypeChange">
-          <view class="picker-input">{{roomTypeOptions[roomTypeIndex]}}</view>
-        </picker>
-      </view>
+    // ===== 围护结构 - 屋顶 =====
+    roofMaterial: 'pu',
+    roofMaterialIndex: 0,
+    roofThickness: 100,
+    roofThicknessIndex: 2,
+    roofK: 0.225,
+    roofAlpha: 1.3,
+    roofAlphaIndex: 2,
+    roofAlphaOptions: ['无（室内顶棚）', '轻度日照', '中度日照（推荐）', '强烈日照'],
+    roofAlphaValues: [1.0, 1.2, 1.3, 1.4],
+    roofArea: 200,
 
-      <view class="form-item">
-        <view class="form-label">库内设计温度 (℃)</view>
-        <input class="input" type="digit" value="{{indoorTemp}}" data-field="indoorTemp" bindinput="onInput" />
-      </view>
+    // ===== 围护结构 - 外墙 =====
+    wallMaterial: 'pu',
+    wallMaterialIndex: 0,
+    wallThickness: 100,
+    wallThicknessIndex: 2,
+    wallK: 0.225,
+    wallAlpha: 1.0,
+    wallAlphaIndex: 0,
+    wallAlphaOptions: ['标准（无强日照）', '轻度日照', '中度日照'],
+    wallAlphaValues: [1.0, 1.1, 1.2],
+    wallArea: 360,
 
-      <view class="form-item">
-        <view class="form-label">夏季室外计算温度 (℃)</view>
-        <input class="input" type="digit" value="{{outdoorTemp}}" data-field="outdoorTemp" bindinput="onInput" />
-      </view>
+    // ===== 围护结构 - 地板 =====
+    floorMaterial: 'pu',
+    floorMaterialIndex: 0,
+    floorThickness: 100,
+    floorThicknessIndex: 2,
+    floorK: 0.225,
+    floorType: 0.5,
+    floorTypeIndex: 0,
+    floorTypeOptions: ['架空地板（半温差）', '直接接触土壤', '下方为常温空间', '下方为加热空间'],
+    floorTypeValues: [0.5, 0.7, 1.0, 0.3],
+    floorArea: 200,
 
-      <view class="form-item">
-        <view class="form-label">室外相对湿度 (%)</view>
-        <input class="input" type="digit" value="{{outdoorHumidity}}" data-field="outdoorHumidity" bindinput="onInput" />
-      </view>
+    // ===== 围护结构 - 隔墙 =====
+    partitionArea: 0,
+    partitionMaterial: 'pu',
+    partitionMaterialIndex: 0,
+    partitionThickness: 100,
+    partitionThicknessIndex: 2,
+    partitionK: 0.225,
+    adjacentTemp: 0,
 
-      <view class="form-item">
-        <view class="form-label">库内相对湿度 (%)</view>
-        <input class="input" type="digit" value="{{indoorHumidity}}" data-field="indoorHumidity" bindinput="onInput" />
-      </view>
+    // ===== 货物负荷 =====
+    productTypeIndex: 0,
+    // density: 货物堆积密度 kg/m³（用于按库容5%自动计算进货量）
+    productOptions: [
+      { label: '鲜肉（猪肉）', inTemp: 4, outTemp: -18, freezePoint: -2.2, cpAbove: 3.10, cpBelow: 1.68, latentHeat: 241, resp: 0, density: 450 },
+      { label: '冻肉（猪肉）', inTemp: -15, outTemp: -18, freezePoint: -2.2, cpAbove: 3.10, cpBelow: 1.68, latentHeat: 0, resp: 0, density: 450 },
+      { label: '鲜肉（牛肉）', inTemp: 4, outTemp: -18, freezePoint: -1.7, cpAbove: 3.22, cpBelow: 1.75, latentHeat: 249, resp: 0, density: 500 },
+      { label: '冻肉（牛肉）', inTemp: -15, outTemp: -18, freezePoint: -1.7, cpAbove: 3.22, cpBelow: 1.75, latentHeat: 0, resp: 0, density: 500 },
+      { label: '鲜肉（禽肉/鸡）', inTemp: 4, outTemp: -18, freezePoint: -2.8, cpAbove: 3.40, cpBelow: 1.82, latentHeat: 247, resp: 0, density: 380 },
+      { label: '冻肉（禽肉/鸡）', inTemp: -15, outTemp: -18, freezePoint: -2.8, cpAbove: 3.40, cpBelow: 1.82, latentHeat: 0, resp: 0, density: 380 },
+      { label: '鲜鱼/海鲜', inTemp: 5, outTemp: -18, freezePoint: -2.0, cpAbove: 3.80, cpBelow: 1.95, latentHeat: 276, resp: 0, density: 420 },
+      { label: '冻鱼/海鲜', inTemp: -15, outTemp: -18, freezePoint: -2.0, cpAbove: 3.80, cpBelow: 1.95, latentHeat: 0, resp: 0, density: 420 },
+      { label: '蔬菜（叶菜类）', inTemp: 25, outTemp: 2, freezePoint: -0.2, cpAbove: 3.95, cpBelow: 1.95, latentHeat: 0, resp: 0.10, density: 220 },
+      { label: '水果（苹果等）', inTemp: 25, outTemp: 2, freezePoint: -1.5, cpAbove: 3.70, cpBelow: 1.88, latentHeat: 0, resp: 0.05, density: 280 },
+      { label: '乳制品（牛奶）', inTemp: 25, outTemp: 2, freezePoint: -0.5, cpAbove: 3.93, cpBelow: 1.95, latentHeat: 0, resp: 0, density: 600 },
+      { label: '自定义', inTemp: 0, outTemp: -18, freezePoint: -1.5, cpAbove: 3.2, cpBelow: 1.7, latentHeat: 250, resp: 0, density: 400 }
+    ],
+    goodsMass: 0,
+    goodsInTemp: 4,
+    goodsOutTemp: -18,
+    freezePoint: -2.2,
+    cpAbove: 3.10,
+    cpBelow: 1.68,
+    latentHeat: 241,
+    respirationHeat: 0,
+    coolingTime: 18,
+    packMass: 0,
+    packCp: 1.5,
+    packTemp: 4,
 
-      <view class="form-item">
-        <view class="form-label">库房长度 (m)</view>
-        <input class="input" type="digit" value="{{roomLength}}" data-field="roomLength" bindinput="onInput" />
-      </view>
+    // ===== 开门渗透（原通风换气）=====
+    doorWidth: 2.0,
+    doorHeight: 2.5,
+    doorOpens: 30,
+    doorDuration: 30,
+    hasAirCurtain: false,
+    hasBufferRoom: false,
+    doorArea: 5.0,
+    dailyAirVolume: 0,
+    outdoorEnthalpy: 0,
+    indoorEnthalpy: 0,
+    enthalpyDiff: 0,
 
-      <view class="form-item">
-        <view class="form-label">库房宽度 (m)</view>
-        <input class="input" type="digit" value="{{roomWidth}}" data-field="roomWidth" bindinput="onInput" />
-      </view>
+    // ===== 操作管理 =====
+    personCount: 2,
+    personHeat: 280,
+    personTime: 4,
+    lightingDensity: 5,
+    lightingTime: 8,
+    equipmentPower: 1.5,
+    equipmentDiversity: 0.5,
+    equipmentTime: 4,
 
-      <view class="form-item">
-        <view class="form-label">库房高度 (m)</view>
-        <input class="input" type="digit" value="{{roomHeight}}" data-field="roomHeight" bindinput="onInput" />
-      </view>
+    // ===== 电机热负荷 =====
+    fanMotorPower: 2.2,
+    motorEfficiency: 0.8,
+    motorTime: 18,
+    otherMotorPower: 0,
 
-      <view class="form-item">
-        <view class="form-label">安全系数 (%)</view>
-        <input class="input" type="digit" value="{{safetyFactor}}" data-field="safetyFactor" bindinput="onInput" />
-        <view class="form-tip">通常取 5%~15%</view>
-      </view>
+    // ===== 设备选型 =====
+    refrigerant: 'R507',
+    refrigerantIndex: 1,
+    refrigerantOptions: ['R22（高温库）', 'R507（中低温库）'],
+    compressorType: 'piston',
+    compressorTypeIndex: 0,
+    compressorTypeOptions: ['活塞式（半封闭）', '螺杆式（带经济器）'],
+    hasEconomizer: false,
+    evapTemp: -28,
+    condTemp: 45,
 
-      <view class="info-box">
-        <view class="info-row"><text class="info-label">库房容积：</text><text class="info-value">{{roomVolume}} m³</text></view>
-        <view class="info-row"><text class="info-label">库房总面积（六面）：</text><text class="info-value">{{totalArea}} m²</text></view>
-      </view>
-    </view>
-  </view>
+    // ===== 计算结果 =====
+    envelopeTotal: 0,
+    envelopeTotalKW: 0,
+    envelopeRows: [],
+    goodsTotal: 0,
+    goodsTotalKW: 0,
+    goodsSensible: 0,
+    goodsLatent: 0,
+    packLoad: 0,
+    containerLoad: 0,
+    respLoad: 0,
+    ventTotal: 0,
+    ventTotalKW: 0,
+    operationTotal: 0,
+    operationTotalKW: 0,
+    personTotal: 0,
+    lightingTotal: 0,
+    equipmentTotal: 0,
+    doorTotal: 0,
+    motorTotal: 0,
+    motorTotalKW: 0,
 
-  <!-- ===== 围护结构 ===== -->
-  <view class="tab-content" wx:if="{{activeTab === 'envelope'}}">
-    <view class="card">
-      <view class="card-title">围护结构传热负荷计算</view>
-      <view class="desc">Q₁ = K × F × Δt × α</view>
+    r1: 0, r2: 0, r3: 0, r4: 0, r5: 0,
+    r1p: '0%', r2p: '0%', r3p: '0%', r4p: '0%', r5p: '0%',
+    rTotal: 0, rDesign: 0,
 
-      <!-- 统一设置 -->
-      <view class="preset-box">
-        <view class="preset-title">🔧 保温材料统一设置</view>
+    barData: [],
+    compressorPower: 0,
+    suggestedCapacity: 0,
+    fanSuggestion: 0,
+    theoreticalCOP: 0,
+    correctedCOP: 0,
+    displacement: 0,
 
-        <view class="form-item">
-          <view class="form-label">保温板材类型</view>
-          <picker mode="selector" range="{{materialOptions}}" range-key="label" value="{{presetMaterialIndex}}" bindchange="onPresetMaterialChange">
-            <view class="picker-input">{{materialOptions[presetMaterialIndex].label}}</view>
-          </picker>
-        </view>
+    // 公司信息
+    companyName: '青岛冷锋节能工程有限公司',
+    companyPhone: '13061468618',
+    companyAddress: '山东省青岛市'
+  },
 
-        <view class="form-item">
-          <view class="form-label">保温层厚度 (mm)</view>
-          <picker mode="selector" range="{{thicknessOptions}}" value="{{presetThicknessIndex}}" bindchange="onPresetThicknessChange">
-            <view class="picker-input">{{thicknessOptions[presetThicknessIndex]}} mm</view>
-          </picker>
-        </view>
+  onLoad() {
+    this.updateRoomInfo();
+    this.updateAllKValues();
+    this.updatePresetK();
+    this.autoFillGoodsParams();
+    this.calculateAll();
+  },
 
-        <view class="btn btn-primary btn-block" bindtap="applyPresetToAll">一键应用到所有部位</view>
+  // ===== 标签页切换 =====
+  switchTab(e) {
+    this.setData({ activeTab: e.currentTarget.dataset.tab });
+  },
 
-        <view class="k-preview">
-          当前配置理论传热系数 K = <text class="k-value">{{presetK}}</text> W/(m²·K)
-        </view>
-      </view>
+  // ===== 通用输入处理 =====
+  onInput(e) {
+    const field = e.currentTarget.dataset.field;
+    // 保存原始字符串，避免输入"1."时被parseFloat重置导致无法输入小数
+    this.setData({ [field]: e.detail.value });
+    this.afterParamChange();
+  },
 
-      <!-- 各部位配置 -->
-      <view class="section-title">各部位保温配置</view>
+  onTextInput(e) {
+    const field = e.currentTarget.dataset.field;
+    this.setData({ [field]: e.detail.value });
+    this.afterParamChange();
+  },
 
-      <!-- 屋顶 -->
-      <view class="config-row">
-        <view class="config-header">
-          <text class="config-title">🏠 屋顶/顶棚</text>
-          <text class="config-area">面积：{{roofArea}} m²</text>
-        </view>
-        <view class="form-item">
-          <view class="form-label">保温板材类型</view>
-          <picker mode="selector" range="{{materialOptions}}" range-key="label" value="{{roofMaterialIndex}}" data-part="roof" bindchange="onMaterialChange">
-            <view class="picker-input">{{materialOptions[roofMaterialIndex].label}}</view>
-          </picker>
-        </view>
-        <view class="form-item">
-          <view class="form-label">保温层厚度 (mm)</view>
-          <picker mode="selector" range="{{thicknessOptions}}" value="{{roofThicknessIndex}}" data-part="roof" bindchange="onThicknessChange">
-            <view class="picker-input">{{thicknessOptions[roofThicknessIndex]}} mm</view>
-          </picker>
-        </view>
-        <view class="form-item">
-          <view class="form-label">传热系数 K [W/(m²·K)]</view>
-          <input class="input" type="digit" value="{{roofK}}" data-field="roofK" bindinput="onInput" />
-          <view class="form-tip">自动计算，可手动微调</view>
-        </view>
-        <view class="form-item">
-          <view class="form-label">太阳辐射修正α</view>
-          <picker mode="selector" range="{{roofAlphaOptions}}" value="{{roofAlphaIndex}}" bindchange="onRoofAlphaChange">
-            <view class="picker-input">{{roofAlphaOptions[roofAlphaIndex]}}</view>
-          </picker>
-        </view>
-      </view>
+  afterParamChange() {
+    this.updateRoomInfo();
+    this.calculateAll();
+  },
 
-      <!-- 外墙 -->
-      <view class="config-row">
-        <view class="config-header">
-          <text class="config-title">🧱 外墙（四面-隔墙）</text>
-          <text class="config-area">面积：{{wallArea}} m²</text>
-        </view>
-        <view class="form-item">
-          <view class="form-label">保温板材类型</view>
-          <picker mode="selector" range="{{materialOptions}}" range-key="label" value="{{wallMaterialIndex}}" data-part="wall" bindchange="onMaterialChange">
-            <view class="picker-input">{{materialOptions[wallMaterialIndex].label}}</view>
-          </picker>
-        </view>
-        <view class="form-item">
-          <view class="form-label">保温层厚度 (mm)</view>
-          <picker mode="selector" range="{{thicknessOptions}}" value="{{wallThicknessIndex}}" data-part="wall" bindchange="onThicknessChange">
-            <view class="picker-input">{{thicknessOptions[wallThicknessIndex]}} mm</view>
-          </picker>
-        </view>
-        <view class="form-item">
-          <view class="form-label">传热系数 K [W/(m²·K)]</view>
-          <input class="input" type="digit" value="{{wallK}}" data-field="wallK" bindinput="onInput" />
-          <view class="form-tip">自动计算，可手动微调</view>
-        </view>
-        <view class="form-item">
-          <view class="form-label">修正系数α</view>
-          <picker mode="selector" range="{{wallAlphaOptions}}" value="{{wallAlphaIndex}}" bindchange="onWallAlphaChange">
-            <view class="picker-input">{{wallAlphaOptions[wallAlphaIndex]}}</view>
-          </picker>
-        </view>
-      </view>
+  // ===== Picker 选择处理 =====
+  onRoomTypeChange(e) {
+    const idx = parseInt(e.detail.value);
+    const type = this.data.roomTypeValues[idx];
+    this.setData({ roomTypeIndex: idx, roomType: type });
+    this.applyRoomTypePreset(type);
+  },
 
-      <!-- 地板 -->
-      <view class="config-row">
-        <view class="config-header">
-          <text class="config-title">⬇️ 地板</text>
-          <text class="config-area">面积：{{floorArea}} m²</text>
-        </view>
-        <view class="form-item">
-          <view class="form-label">保温板材类型</view>
-          <picker mode="selector" range="{{materialOptions}}" range-key="label" value="{{floorMaterialIndex}}" data-part="floor" bindchange="onMaterialChange">
-            <view class="picker-input">{{materialOptions[floorMaterialIndex].label}}</view>
-          </picker>
-        </view>
-        <view class="form-item">
-          <view class="form-label">保温层厚度 (mm)</view>
-          <picker mode="selector" range="{{thicknessOptions}}" value="{{floorThicknessIndex}}" data-part="floor" bindchange="onThicknessChange">
-            <view class="picker-input">{{thicknessOptions[floorThicknessIndex]}} mm</view>
-          </picker>
-        </view>
-        <view class="form-item">
-          <view class="form-label">传热系数 K [W/(m²·K)]</view>
-          <input class="input" type="digit" value="{{floorK}}" data-field="floorK" bindinput="onInput" />
-          <view class="form-tip">自动计算，可手动微调</view>
-        </view>
-        <view class="form-item">
-          <view class="form-label">地板类型</view>
-          <picker mode="selector" range="{{floorTypeOptions}}" value="{{floorTypeIndex}}" bindchange="onFloorTypeChange">
-            <view class="picker-input">{{floorTypeOptions[floorTypeIndex]}}</view>
-          </picker>
-        </view>
-      </view>
+  onPresetMaterialChange(e) {
+    const idx = parseInt(e.detail.value);
+    const material = this.data.materialOptions[idx].value;
+    this.setData({ presetMaterialIndex: idx, presetMaterial: material });
+    this.updatePresetK();
+    this.calculateAll();
+  },
 
-      <!-- 隔墙 -->
-      <view class="config-row">
-        <view class="config-header">
-          <text class="config-title">🚪 隔墙（与邻室）</text>
-          <text class="config-area">面积：{{partitionArea}} m²</text>
-        </view>
-        <view class="form-item">
-          <view class="form-label">隔墙面积 (m²)</view>
-          <input class="input" type="digit" value="{{partitionArea}}" data-field="partitionArea" bindinput="onInput" />
-          <view class="form-tip">有邻室时填写，无则为0</view>
-        </view>
-        <view class="form-item">
-          <view class="form-label">保温板材类型</view>
-          <picker mode="selector" range="{{materialOptions}}" range-key="label" value="{{partitionMaterialIndex}}" data-part="partition" bindchange="onMaterialChange">
-            <view class="picker-input">{{materialOptions[partitionMaterialIndex].label}}</view>
-          </picker>
-        </view>
-        <view class="form-item">
-          <view class="form-label">保温层厚度 (mm)</view>
-          <picker mode="selector" range="{{thicknessOptions}}" value="{{partitionThicknessIndex}}" data-part="partition" bindchange="onThicknessChange">
-            <view class="picker-input">{{thicknessOptions[partitionThicknessIndex]}} mm</view>
-          </picker>
-        </view>
-        <view class="form-item">
-          <view class="form-label">传热系数 K [W/(m²·K)]</view>
-          <input class="input" type="digit" value="{{partitionK}}" data-field="partitionK" bindinput="onInput" />
-        </view>
-        <view class="form-item">
-          <view class="form-label">邻室温度 (℃)</view>
-          <input class="input" type="digit" value="{{adjacentTemp}}" data-field="adjacentTemp" bindinput="onInput" />
-        </view>
-      </view>
+  onPresetThicknessChange(e) {
+    const idx = parseInt(e.detail.value);
+    const thickness = this.data.thicknessOptions[idx];
+    this.setData({ presetThicknessIndex: idx, presetThickness: thickness });
+    this.updatePresetK();
+    this.calculateAll();
+  },
 
-      <!-- 计算结果表 -->
-      <view class="section-title">📊 围护结构传热计算结果</view>
-      <view class="table-wrap">
-        <view class="table-header">
-          <text class="th th-name">部位</text>
-          <text class="th">面积</text>
-          <text class="th">材料</text>
-          <text class="th">厚度</text>
-          <text class="th">K值</text>
-          <text class="th">温差</text>
-          <text class="th">α</text>
-          <text class="th">传热量(W)</text>
-        </view>
-        <view class="table-row" wx:for="{{envelopeRows}}" wx:key="name">
-          <text class="td td-name">{{item.name}}</text>
-          <text class="td">{{item.area}}</text>
-          <text class="td td-mat">{{item.material}}</text>
-          <text class="td">{{item.thickness}}</text>
-          <text class="td">{{item.k}}</text>
-          <text class="td">{{item.delta}}</text>
-          <text class="td">{{item.alpha}}</text>
-          <text class="td td-load">{{item.load}}</text>
-        </view>
-        <view class="table-total">
-          <text class="total-label">围护结构总传热负荷</text>
-          <text class="total-value">{{envelopeTotal}} W / {{envelopeTotalKW}} kW</text>
-        </view>
-      </view>
-    </view>
-  </view>
+  onMaterialChange(e) {
+    const part = e.currentTarget.dataset.part;
+    const idx = parseInt(e.detail.value);
+    const material = this.data.materialOptions[idx].value;
+    this.setData({
+      [`${part}MaterialIndex`]: idx,
+      [`${part}Material`]: material
+    });
+    this.updatePartKValue(part);
+    this.calculateAll();
+  },
 
-  <!-- ===== 货物负荷 ===== -->
-  <view class="tab-content" wx:if="{{activeTab === 'goods'}}">
-    <view class="card">
-      <view class="card-title">货物冷负荷计算</view>
-      <view class="desc">包含货物冷却、冻结潜热、呼吸热、包装材料（含托盘、纸箱）的热量</view>
+  onThicknessChange(e) {
+    const part = e.currentTarget.dataset.part;
+    const idx = parseInt(e.detail.value);
+    const thickness = this.data.thicknessOptions[idx];
+    this.setData({
+      [`${part}ThicknessIndex`]: idx,
+      [`${part}Thickness`]: thickness
+    });
+    this.updatePartKValue(part);
+    this.calculateAll();
+  },
 
-      <!-- 货物类型选择 -->
-      <view class="preset-box">
-        <view class="preset-title">📦 货物类型选择（自动填入热工参数）</view>
-        <view class="form-item">
-          <view class="form-label">货物类型</view>
-          <picker mode="selector" range="{{productOptions}}" range-key="label" value="{{productTypeIndex}}" bindchange="onProductTypeChange">
-            <view class="picker-input">{{productOptions[productTypeIndex].label}}</view>
-          </picker>
-        </view>
-      </view>
+  onRoofAlphaChange(e) {
+    const idx = parseInt(e.detail.value);
+    this.setData({
+      roofAlphaIndex: idx,
+      roofAlpha: this.data.roofAlphaValues[idx]
+    });
+    this.calculateAll();
+  },
 
-      <view class="section-title">货物热工参数（自动填入，可手动修改）</view>
-      <view class="form-item">
-        <view class="form-label">每日进货量 (kg/d)</view>
-        <input class="input" type="digit" value="{{goodsMass}}" data-field="goodsMass" bindinput="onInput" />
-        <view class="form-tip">自动=库容×5%×货物密度，可手动调整</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">货物进货温度 (℃)</view>
-        <input class="input" type="digit" value="{{goodsInTemp}}" data-field="goodsInTemp" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">货物终温 (℃)</view>
-        <input class="input" type="digit" value="{{goodsOutTemp}}" data-field="goodsOutTemp" bindinput="onInput" />
-        <view class="form-tip">自动=库内设计温度</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">货物冻结点温度 (℃)</view>
-        <input class="input" type="digit" value="{{freezePoint}}" data-field="freezePoint" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">冻结前比热容 [kJ/(kg·K)]</view>
-        <input class="input" type="digit" value="{{cpAbove}}" data-field="cpAbove" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">冻结后比热容 [kJ/(kg·K)]</view>
-        <input class="input" type="digit" value="{{cpBelow}}" data-field="cpBelow" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">货物潜热 (kJ/kg)</view>
-        <input class="input" type="digit" value="{{latentHeat}}" data-field="latentHeat" bindinput="onInput" />
-        <view class="form-tip">已冻货物填0，鲜货按ASHRAE数据填入</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">呼吸热 (W/kg)</view>
-        <input class="input" type="digit" value="{{respirationHeat}}" data-field="respirationHeat" bindinput="onInput" />
-        <view class="form-tip">蔬菜叶菜约0.1，水果约0.05，冻货为0</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">货物冷却时间 (h)</view>
-        <input class="input" type="digit" value="{{coolingTime}}" data-field="coolingTime" bindinput="onInput" />
-        <view class="form-tip">默认18小时</view>
-      </view>
+  onWallAlphaChange(e) {
+    const idx = parseInt(e.detail.value);
+    this.setData({
+      wallAlphaIndex: idx,
+      wallAlpha: this.data.wallAlphaValues[idx]
+    });
+    this.calculateAll();
+  },
 
-      <view class="section-title">包装材料（含托盘、纸箱、周转筐）</view>
+  onFloorTypeChange(e) {
+    const idx = parseInt(e.detail.value);
+    this.setData({
+      floorTypeIndex: idx,
+      floorType: this.data.floorTypeValues[idx]
+    });
+    this.calculateAll();
+  },
 
-      <view class="form-item">
-        <view class="form-label">包装材料质量 (kg/d)</view>
-        <input class="input" type="digit" value="{{packMass}}" data-field="packMass" bindinput="onInput" />
-        <view class="form-tip">自动=货物质量×10%，可手动调整</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">包装比热容 [kJ/(kg·K)]</view>
-        <input class="input" type="digit" value="{{packCp}}" data-field="packCp" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">包装初始温度 (℃)</view>
-        <input class="input" type="digit" value="{{packTemp}}" data-field="packTemp" bindinput="onInput" />
-        <view class="form-tip">自动=货物入库温度</view>
-      </view>
+  // ===== 货物类型选择（自动填充热工参数） =====
+  onProductTypeChange(e) {
+    const idx = parseInt(e.detail.value);
+    const p = this.data.productOptions[idx];
+    this.setData({
+      productTypeIndex: idx,
+      goodsInTemp: p.inTemp,
+      freezePoint: p.freezePoint,
+      cpAbove: p.cpAbove,
+      cpBelow: p.cpBelow,
+      latentHeat: p.latentHeat,
+      respirationHeat: p.resp
+    });
+    this.autoFillGoodsParams();
+    this.calculateAll();
+  },
 
-      <view class="result-summary">
-        <view class="result-title">货物总冷负荷：{{goodsTotal}} W = {{goodsTotalKW}} kW</view>
-        <view class="breakdown">
-          <view class="breakdown-item">货物显热（冷却）：{{goodsSensible}} W</view>
-          <view class="breakdown-item">货物潜热（冻结）：{{goodsLatent}} W</view>
-          <view class="breakdown-item">呼吸热（果蔬）：{{respLoad}} W</view>
-          <view class="breakdown-item">包装材料冷负荷：{{packLoad}} W</view>
-        </view>
-      </view>
-    </view>
-  </view>
+  // ===== 自动填入货物相关参数 =====
+  // 1. 每日进货量 = 库容(m³) × 5% × 货物密度(kg/m³)
+  // 2. 货物终温 = 库温
+  // 3. 包装质量 = 货物质量 × 10%
+  // 4. 包装初始温度 = 货物入库温度
+  autoFillGoodsParams() {
+    const d = this.data;
+    const p = d.productOptions[d.productTypeIndex] || {};
+    const density = p.density || 400;
+    const volume = d.roomVolume || 0;
 
-  <!-- ===== 开门渗透（原通风换气） ===== -->
-  <view class="tab-content" wx:if="{{activeTab === 'ventilation'}}">
-    <view class="card">
-      <view class="card-title">开门渗透冷负荷计算</view>
-      <view class="desc">Q = F门 × v × ρ × Δh × (n × τ / 86400) × 修正系数</view>
+    // 每日进货量 = 库容 × 5% × 货物密度
+    const goodsMass = Math.round(volume * 0.05 * density);
+    // 货物终温 = 库温
+    const goodsOutTemp = d.indoorTemp;
+    // 包装质量 = 货物质量 × 10%
+    const packMass = Math.round(goodsMass * 0.1);
+    // 包装初始温度 = 货物入库温度
+    const packTemp = d.goodsInTemp;
 
-      <view class="section-title">门洞尺寸</view>
-      <view class="form-item">
-        <view class="form-label">门洞宽度 (m)</view>
-        <input class="input" type="digit" value="{{doorWidth}}" data-field="doorWidth" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">门洞高度 (m)</view>
-        <input class="input" type="digit" value="{{doorHeight}}" data-field="doorHeight" bindinput="onInput" />
-      </view>
+    this.setData({ goodsMass, goodsOutTemp, packMass, packTemp });
+  },
 
-      <view class="section-title">开门频次</view>
-      <view class="form-item">
-        <view class="form-label">每日开门次数 (次/日)</view>
-        <input class="input" type="digit" value="{{doorOpens}}" data-field="doorOpens" bindinput="onInput" />
-        <view class="form-tip">一般冷库20~50次/日</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">每次开门时长 (秒)</view>
-        <input class="input" type="digit" value="{{doorDuration}}" data-field="doorDuration" bindinput="onInput" />
-        <view class="form-tip">约30秒，如果工人操作时间较长，时间可适当加长</view>
-      </view>
+  // ===== 开关门修正项切换 =====
+  onToggleSwitch(e) {
+    const field = e.currentTarget.dataset.field;
+    this.setData({ [field]: e.detail.value });
+    this.calculateAll();
+  },
 
-      <view class="section-title">渗透修正措施</view>
-      <view class="form-item">
-        <view class="form-label">是否有风幕</view>
-        <switch checked="{{hasAirCurtain}}" data-field="hasAirCurtain" bindchange="onToggleSwitch" color="#2a5298" />
-        <view class="form-tip">风幕可减少约10%冷热交换</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">缓冲间（含防撞门/快速卷帘门）</view>
-        <switch checked="{{hasBufferRoom}}" data-field="hasBufferRoom" bindchange="onToggleSwitch" color="#2a5298" />
-        <view class="form-tip">缓冲间可阻隔约80%冷热交换</view>
-      </view>
+  // ===== 制冷剂选择 =====
+  onRefrigerantChange(e) {
+    const idx = parseInt(e.detail.value);
+    const ref = idx === 0 ? 'R22' : 'R507';
+    this.setData({ refrigerantIndex: idx, refrigerant: ref });
+    this.calculateAll();
+  },
 
-      <view class="info-box">
-        <view class="section-subtitle">自动计算结果</view>
-        <view class="info-row"><text class="info-label">门洞面积：</text><text class="info-value">{{doorArea}} m²</text></view>
-        <view class="info-row"><text class="info-label">日渗透空气量：</text><text class="info-value">{{dailyAirVolume}} m³/日</text></view>
-        <view class="info-row"><text class="info-label">室外焓值 h_w：</text><text class="info-value">{{outdoorEnthalpy}} kJ/kg</text></view>
-        <view class="info-row"><text class="info-label">室内焓值 h_n：</text><text class="info-value">{{indoorEnthalpy}} kJ/kg</text></view>
-        <view class="info-row"><text class="info-label">焓差 Δh：</text><text class="info-value">{{enthalpyDiff}} kJ/kg</text></view>
-      </view>
+  // ===== 压缩机类型选择 =====
+  onCompressorTypeChange(e) {
+    const idx = parseInt(e.detail.value);
+    const type = idx === 1 ? 'screw' : 'piston';
+    // 选螺杆式默认开启经济器
+    const econ = idx === 1 ? true : this.data.hasEconomizer;
+    this.setData({ compressorTypeIndex: idx, compressorType: type, hasEconomizer: econ });
+    this.calculateAll();
+  },
 
-      <view class="result-summary">
-        <view class="result-title">开门渗透总冷负荷：{{ventTotal}} W = {{ventTotalKW}} kW</view>
-      </view>
-    </view>
-  </view>
+  // ===== K值计算 =====
+  updatePartKValue(part) {
+    const material = this.data[`${part}Material`];
+    const thickness = this.data[`${part}Thickness`];
+    const k = calc.calculateKValue(material, thickness);
+    this.setData({ [`${part}K`]: parseFloat(k.toFixed(3)) });
+  },
 
-  <!-- ===== 操作管理 ===== -->
-  <view class="tab-content" wx:if="{{activeTab === 'operation'}}">
-    <view class="card">
-      <view class="card-title">操作管理冷负荷</view>
+  updateAllKValues() {
+    ['roof', 'wall', 'floor', 'partition'].forEach(part => {
+      this.updatePartKValue(part);
+    });
+  },
 
-      <view class="section-title">人员散热</view>
-      <view class="form-item">
-        <view class="form-label">库内工作人员数量 (人)</view>
-        <input class="input" type="digit" value="{{personCount}}" data-field="personCount" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">每人散热量 (W/人)</view>
-        <input class="input" type="digit" value="{{personHeat}}" data-field="personHeat" bindinput="onInput" />
-        <view class="form-tip">轻度劳动280W，中度劳动420W</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">人员每日在库时间 (h)</view>
-        <input class="input" type="digit" value="{{personTime}}" data-field="personTime" bindinput="onInput" />
-      </view>
+  updatePresetK() {
+    const k = calc.calculateKValue(this.data.presetMaterial, this.data.presetThickness);
+    this.setData({ presetK: parseFloat(k.toFixed(3)) });
+  },
 
-      <view class="section-title">照明散热</view>
-      <view class="form-item">
-        <view class="form-label">照明功率密度 (W/m²)</view>
-        <input class="input" type="digit" value="{{lightingDensity}}" data-field="lightingDensity" bindinput="onInput" />
-        <view class="form-tip">一般冷库3~5 W/m²</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">每日照明时间 (h)</view>
-        <input class="input" type="digit" value="{{lightingTime}}" data-field="lightingTime" bindinput="onInput" />
-      </view>
+  // 一键应用保温材料到所有部位
+  applyPresetToAll() {
+    const material = this.data.presetMaterial;
+    const thickness = this.data.presetThickness;
+    const materialIdx = this.data.presetMaterialIndex;
+    const thicknessIdx = this.data.presetThicknessIndex;
 
-      <view class="section-title">设备散热</view>
-      <view class="form-item">
-        <view class="form-label">库内设备总功率 (kW)</view>
-        <input class="input" type="digit" value="{{equipmentPower}}" data-field="equipmentPower" bindinput="onInput" />
-        <view class="form-tip">如叉车、分拣设备等</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">设备同时使用系数</view>
-        <input class="input" type="digit" value="{{equipmentDiversity}}" data-field="equipmentDiversity" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">设备每日运行时间 (h)</view>
-        <input class="input" type="digit" value="{{equipmentTime}}" data-field="equipmentTime" bindinput="onInput" />
-      </view>
+    const updates = {};
+    ['roof', 'wall', 'floor', 'partition'].forEach(part => {
+      updates[`${part}Material`] = material;
+      updates[`${part}MaterialIndex`] = materialIdx;
+      updates[`${part}Thickness`] = thickness;
+      updates[`${part}ThicknessIndex`] = thicknessIdx;
+    });
 
-      <view class="result-summary">
-        <view class="result-title">操作管理总冷负荷：{{operationTotal}} W = {{operationTotalKW}} kW</view>
-        <view class="breakdown">
-          <view class="breakdown-item">人员散热：{{personTotal}} W</view>
-          <view class="breakdown-item">照明散热：{{lightingTotal}} W</view>
-          <view class="breakdown-item">设备散热：{{equipmentTotal}} W</view>
-        </view>
-      </view>
-    </view>
-  </view>
+    this.setData(updates);
+    this.updateAllKValues();
+    this.calculateAll();
 
-  <!-- ===== 电机热负荷 ===== -->
-  <view class="tab-content" wx:if="{{activeTab === 'motor'}}">
-    <view class="card">
-      <view class="card-title">电机运行热负荷</view>
-      <view class="desc">库内风机、电机等设备运行时产生的热量</view>
+    wx.showToast({ title: '已应用到所有部位', icon: 'success', duration: 1500 });
+  },
 
-      <view class="form-item">
-        <view class="form-label">冷风机电机总功率 (kW)</view>
-        <input class="input" type="digit" value="{{fanMotorPower}}" data-field="fanMotorPower" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">电机热转化系数</view>
-        <input class="input" type="digit" value="{{motorEfficiency}}" data-field="motorEfficiency" bindinput="onInput" />
-        <view class="form-tip">电机在库内取0.7~0.85</view>
-      </view>
-      <view class="form-item">
-        <view class="form-label">每日运行时间 (h)</view>
-        <input class="input" type="digit" value="{{motorTime}}" data-field="motorTime" bindinput="onInput" />
-      </view>
-      <view class="form-item">
-        <view class="form-label">其他库内电机功率 (kW)</view>
-        <input class="input" type="digit" value="{{otherMotorPower}}" data-field="otherMotorPower" bindinput="onInput" />
-      </view>
+  // 库房类型预设
+  applyRoomTypePreset(type) {
+    const updates = {};
+    switch(type) {
+      case 'cooling':
+        updates.indoorTemp = 0;
+        updates.cpAbove = 3.5;
+        updates.cpBelow = 1.8;
+        updates.latentHeat = 0;
+        updates.freezePoint = -1;
+        updates.refrigerant = 'R22';
+        updates.refrigerantIndex = 0;
+        updates.evapTemp = -12;  // 高温库：库温低10~15°C
+        this.setEnvelopePreset(updates, 'pu', 100, 0);
+        break;
+      case 'freezing':
+        updates.indoorTemp = -18;
+        updates.cpAbove = 3.2;
+        updates.cpBelow = 1.7;
+        updates.latentHeat = 250;
+        updates.freezePoint = -1.5;
+        updates.refrigerant = 'R507';
+        updates.refrigerantIndex = 1;
+        updates.evapTemp = -28;  // 中低温库：库温低8~12°C
+        this.setEnvelopePreset(updates, 'pu', 100, 0);
+        break;
+      case 'deepfreeze':
+        updates.indoorTemp = -30;
+        updates.cpAbove = 3.0;
+        updates.cpBelow = 1.6;
+        updates.latentHeat = 250;
+        updates.freezePoint = -1.5;
+        updates.refrigerant = 'R507';
+        updates.refrigerantIndex = 1;
+        updates.evapTemp = -38;  // 低温库：库温低6~10°C
+        updates.hasEconomizer = true;
+        updates.compressorType = 'screw';
+        updates.compressorTypeIndex = 1;
+        this.setEnvelopePreset(updates, 'pu', 150, 4);
+        break;
+      case 'constant':
+        updates.indoorTemp = 5;
+        updates.cpAbove = 3.5;
+        updates.cpBelow = 1.8;
+        updates.latentHeat = 0;
+        updates.freezePoint = 0;
+        updates.refrigerant = 'R22';
+        updates.refrigerantIndex = 0;
+        updates.evapTemp = -5;
+        this.setEnvelopePreset(updates, 'pu', 75, 1);
+        break;
+    }
+    // 冷凝温度 = 室外温度 + 10°C
+    const outdoorTemp = parseFloat(this.data.outdoorTemp) || 35;
+    updates.condTemp = outdoorTemp + 10;
+    this.setData(updates);
+    this.updateAllKValues();
+    this.updatePresetK();
+    this.autoFillGoodsParams();
+    this.calculateAll();
+  },
 
-      <view class="result-summary">
-        <view class="result-title">电机总热负荷：{{motorTotal}} W = {{motorTotalKW}} kW</view>
-      </view>
-    </view>
-  </view>
+  setEnvelopePreset(updates, material, thickness, thicknessIdx) {
+    updates.presetMaterial = material;
+    updates.presetMaterialIndex = 0;
+    updates.presetThickness = thickness;
+    updates.presetThicknessIndex = thicknessIdx;
+    ['roof', 'wall', 'floor', 'partition'].forEach(part => {
+      updates[`${part}Material`] = material;
+      updates[`${part}MaterialIndex`] = 0;
+      updates[`${part}Thickness`] = thickness;
+      updates[`${part}ThicknessIndex`] = thicknessIdx;
+    });
+  },
 
-  <!-- ===== 计算结果 ===== -->
-  <view class="tab-content" wx:if="{{activeTab === 'result'}}">
-    <view class="card">
-      <view class="card-title">📊 冷量计算结果汇总</view>
+  // ===== 库房信息更新 =====
+  updateRoomInfo() {
+    const L = parseFloat(this.data.roomLength) || 0;
+    const W = parseFloat(this.data.roomWidth) || 0;
+    const H = parseFloat(this.data.roomHeight) || 0;
+    const partArea = parseFloat(this.data.partitionArea) || 0;
 
-      <view class="result-main">
-        <view class="result-row">
-          <text class="row-label">① 围护结构传热负荷</text>
-          <text class="row-value">{{r1}} kW</text>
-          <text class="row-percent">{{r1p}}</text>
-        </view>
-        <view class="result-row">
-          <text class="row-label">② 货物冷负荷</text>
-          <text class="row-value">{{r2}} kW</text>
-          <text class="row-percent">{{r2p}}</text>
-        </view>
-        <view class="result-row">
-          <text class="row-label">③ 开门渗透冷负荷</text>
-          <text class="row-value">{{r3}} kW</text>
-          <text class="row-percent">{{r3p}}</text>
-        </view>
-        <view class="result-row">
-          <text class="row-label">④ 操作管理冷负荷</text>
-          <text class="row-value">{{r4}} kW</text>
-          <text class="row-percent">{{r4p}}</text>
-        </view>
-        <view class="result-row">
-          <text class="row-label">⑤ 电机运行热负荷</text>
-          <text class="row-value">{{r5}} kW</text>
-          <text class="row-percent">{{r5p}}</text>
-        </view>
+    const volume = L * W * H;
+    const totalArea = 2 * (L * W + L * H + W * H);
+    const roofArea = L * W;
+    // 外墙面积扣除隔墙部分，与calculator.js保持一致
+    const wallArea = Math.max(0, 2 * (L + W) * H - partArea);
 
-        <view class="result-row total-row">
-          <text class="row-label">计算总冷负荷</text>
-          <text class="row-value">{{rTotal}} kW</text>
-          <text class="row-percent">100%</text>
-        </view>
-        <view class="result-row grand-total">
-          <text class="row-label">设计冷量（含安全系数）</text>
-          <text class="row-value">{{rDesign}} kW</text>
-        </view>
-      </view>
+    this.setData({
+      roomVolume: parseFloat(volume.toFixed(1)),
+      totalArea: parseFloat(totalArea.toFixed(1)),
+      roofArea: parseFloat(roofArea.toFixed(2)),
+      wallArea: parseFloat(wallArea.toFixed(2)),
+      floorArea: parseFloat(roofArea.toFixed(2))
+    });
 
-      <!-- 柱状图 -->
-      <view class="chart-box">
-        <view class="section-title">负荷构成比例</view>
-        <view class="bar-chart">
-          <view class="bar-row" wx:for="{{barData}}" wx:key="label">
-            <text class="bar-label">{{item.label}}</text>
-            <view class="bar-track">
-              <view class="bar-fill" style="width: {{item.pct}}%; background: {{item.color}};">
-                <text class="bar-text">{{item.kw}}kW</text>
-              </view>
-            </view>
-          </view>
-        </view>
-      </view>
+    // 库房尺寸变化时，重新自动计算货物进货量和包装量
+    this.autoFillGoodsParams();
+  },
 
-      <!-- 设备选型 -->
-      <view class="selection-box">
-        <view class="section-title">🔧 制冷设备选型参考</view>
+  // ===== 主计算函数 =====
+  getParams() {
+    const d = this.data;
+    const num = (v) => parseFloat(v) || 0;
+    return {
+      roomName: d.roomName,
+      roomType: d.roomType,
+      indoorTemp: num(d.indoorTemp),
+      outdoorTemp: num(d.outdoorTemp),
+      outdoorHumidity: num(d.outdoorHumidity),
+      indoorHumidity: num(d.indoorHumidity),
+      roomLength: num(d.roomLength),
+      roomWidth: num(d.roomWidth),
+      roomHeight: num(d.roomHeight),
+      safetyFactor: num(d.safetyFactor),
+      roofK: num(d.roofK),
+      wallK: num(d.wallK),
+      floorK: num(d.floorK),
+      partitionK: num(d.partitionK),
+      roofAlpha: num(d.roofAlpha),
+      wallAlpha: num(d.wallAlpha),
+      floorAlpha: num(d.floorType),
+      partitionArea: num(d.partitionArea),
+      adjacentTemp: num(d.adjacentTemp),
+      roofMaterial: d.roofMaterial,
+      roofThickness: num(d.roofThickness),
+      wallMaterial: d.wallMaterial,
+      wallThickness: num(d.wallThickness),
+      floorMaterial: d.floorMaterial,
+      floorThickness: num(d.floorThickness),
+      partitionMaterial: d.partitionMaterial,
+      partitionThickness: num(d.partitionThickness),
+      goodsMass: num(d.goodsMass),
+      goodsInTemp: num(d.goodsInTemp),
+      goodsOutTemp: num(d.goodsOutTemp),
+      freezePoint: num(d.freezePoint),
+      cpAbove: num(d.cpAbove),
+      cpBelow: num(d.cpBelow),
+      latentHeat: num(d.latentHeat),
+      respirationHeat: num(d.respirationHeat),
+      coolingTime: num(d.coolingTime),
+      packMass: num(d.packMass),
+      packCp: num(d.packCp),
+      packTemp: num(d.packTemp),
+      doorWidth: num(d.doorWidth),
+      doorHeight: num(d.doorHeight),
+      doorOpens: num(d.doorOpens),
+      doorDuration: num(d.doorDuration),
+      hasAirCurtain: d.hasAirCurtain,
+      hasBufferRoom: d.hasBufferRoom,
+      personCount: num(d.personCount),
+      personHeat: num(d.personHeat),
+      personTime: num(d.personTime),
+      lightingDensity: num(d.lightingDensity),
+      lightingTime: num(d.lightingTime),
+      equipmentPower: num(d.equipmentPower),
+      equipmentDiversity: num(d.equipmentDiversity),
+      equipmentTime: num(d.equipmentTime),
+      fanMotorPower: num(d.fanMotorPower),
+      motorEfficiency: num(d.motorEfficiency),
+      motorTime: num(d.motorTime),
+      otherMotorPower: num(d.otherMotorPower),
+      evapTemp: num(d.evapTemp),
+      condTemp: num(d.condTemp),
+      refrigerant: d.refrigerant,
+      compressorType: d.compressorType,
+      hasEconomizer: d.hasEconomizer
+    };
+  },
 
-        <view class="preset-box">
-          <view class="form-item">
-            <view class="form-label">制冷剂类型</view>
-            <picker mode="selector" range="{{refrigerantOptions}}" value="{{refrigerantIndex}}" bindchange="onRefrigerantChange">
-              <view class="picker-input">{{refrigerantOptions[refrigerantIndex]}}</view>
-            </picker>
-          </view>
-          <view class="form-item">
-            <view class="form-label">蒸发温度 (℃)</view>
-            <input class="input" type="digit" value="{{evapTemp}}" data-field="evapTemp" bindinput="onInput" />
-            <view class="form-tip">高温库比库温低10~15℃，中低温库低8~12℃</view>
-          </view>
-          <view class="form-item">
-            <view class="form-label">冷凝温度 (℃)</view>
-            <input class="input" type="digit" value="{{condTemp}}" data-field="condTemp" bindinput="onInput" />
-            <view class="form-tip">默认=室外温度+10℃，可修改</view>
-          </view>
-        </view>
+  calculateAll() {
+    const params = this.getParams();
+    const result = calc.calculateTotal(params);
+    const selection = calc.calculateSelection(result, params);
 
-        <view class="info-box">
-          <view class="section-subtitle">压缩机选型计算结果</view>
-          <view class="info-row"><text class="info-label">理论能效比 COP：</text><text class="info-value">{{theoreticalCOP}}</text></view>
-          <view class="info-row"><text class="info-label">实际能效比（90%修正）：</text><text class="info-value">{{correctedCOP}}</text></view>
-          <view class="info-row"><text class="info-label">压缩机轴功率：</text><text class="info-value">{{compressorPower}} kW</text></view>
-          <view class="info-row"><text class="info-label">压缩机排气量：</text><text class="info-value">{{displacement}} m³/h</text></view>
-          <view class="info-row"><text class="info-label">建议配置制冷量：</text><text class="info-value">{{suggestedCapacity}} kW</text></view>
-          <view class="info-row"><text class="info-label">冷风机建议配置：</text><text class="info-value">{{fanSuggestion}} kW（1.2倍余量）</text></view>
-        </view>
-      </view>
+    // 围护结构
+    const envelopeRows = [
+      {
+        name: '屋顶/顶棚',
+        area: result.envelope.roof.area.toFixed(2),
+        material: calc.MATERIAL_NAMES[params.roofMaterial],
+        thickness: result.envelope.roof.area > 0 ? params.roofThickness : '-',
+        k: result.envelope.roof.k.toFixed(3),
+        delta: result.envelope.roof.delta.toFixed(1),
+        alpha: result.envelope.roof.alpha.toFixed(2),
+        load: result.envelope.roof.load.toFixed(1)
+      },
+      {
+        name: '外墙（四面）',
+        area: result.envelope.wall.area.toFixed(2),
+        material: calc.MATERIAL_NAMES[params.wallMaterial],
+        thickness: result.envelope.wall.area > 0 ? params.wallThickness : '-',
+        k: result.envelope.wall.k.toFixed(3),
+        delta: result.envelope.wall.delta.toFixed(1),
+        alpha: result.envelope.wall.alpha.toFixed(2),
+        load: result.envelope.wall.load.toFixed(1)
+      },
+      {
+        name: '地板',
+        area: result.envelope.floor.area.toFixed(2),
+        material: calc.MATERIAL_NAMES[params.floorMaterial],
+        thickness: result.envelope.floor.area > 0 ? params.floorThickness : '-',
+        k: result.envelope.floor.k.toFixed(3),
+        delta: result.envelope.floor.delta.toFixed(1),
+        alpha: result.envelope.floor.alpha.toFixed(2),
+        load: result.envelope.floor.load.toFixed(1)
+      },
+      {
+        name: '隔墙',
+        area: result.envelope.partition.area.toFixed(2),
+        material: calc.MATERIAL_NAMES[params.partitionMaterial],
+        thickness: result.envelope.partition.area > 0 ? params.partitionThickness : '-',
+        k: result.envelope.partition.k.toFixed(3),
+        delta: result.envelope.partition.delta.toFixed(1),
+        alpha: result.envelope.partition.alpha.toFixed(2),
+        load: result.envelope.partition.load.toFixed(1)
+      }
+    ];
 
-      <!-- 操作按钮 -->
-      <view class="action-buttons">
-        <view class="btn btn-primary" bindtap="exportReport">📄 导出计算报告</view>
-        <view class="btn btn-secondary" bindtap="resetAll">🔄 重置参数</view>
-      </view>
-    </view>
-  </view>
+    // 柱状图数据
+    const loads = [
+      result.envelope.total,
+      result.goods.total,
+      result.ventilation.total,
+      result.operation.total,
+      result.motor.total
+    ];
+    const labels = ['围护结构', '货物负荷', '开门渗透', '操作管理', '电机热负荷'];
+    const colors = ['#2a5298', '#e74c3c', '#27ae60', '#f39c12', '#9b59b6'];
+    const total = result.totalW;
 
-  <!-- 公司信息页脚 -->
-  <view class="footer">
-    <view class="footer-company">
-      <view class="footer-name">{{companyName}}</view>
-      <view class="footer-desc">专业冷库设计 · 安装 · 节能改造一站式服务</view>
-    </view>
-    <view class="footer-contact" bindtap="makeCall">
-      <text class="footer-phone">📞 电话/微信：{{companyPhone}}</text>
-    </view>
-    <view class="footer-address">📍 地址：{{companyAddress}}</view>
-    <view class="footer-version">冷库冷量计算软件 v2.0 小程序版 | 依据 GB 50072 编制</view>
-    <view class="footer-disclaimer">本软件计算结果仅供参考，实际工程设计请由专业制冷工程师审核确认。</view>
-  </view>
-</view>
+    const barData = labels.map((label, i) => {
+      const pct = total > 0 ? (loads[i] / total * 100) : 0;
+      return {
+        label: label,
+        pct: Math.max(pct, 2),
+        kw: (loads[i] / 1000).toFixed(2),
+        color: colors[i]
+      };
+    });
+
+    this.setData({
+      envelopeTotal: result.envelope.total.toFixed(1),
+      envelopeTotalKW: (result.envelope.total / 1000).toFixed(2),
+      envelopeRows: envelopeRows,
+
+      goodsSensible: result.goods.sensible.toFixed(1),
+      goodsLatent: result.goods.latent.toFixed(1),
+      packLoad: result.goods.pack.toFixed(1),
+      respLoad: result.goods.respiration.toFixed(1),
+      goodsTotal: result.goods.total.toFixed(1),
+      goodsTotalKW: (result.goods.total / 1000).toFixed(2),
+
+      doorArea: result.ventilation.doorArea.toFixed(2),
+      dailyAirVolume: result.ventilation.dailyAirVolume.toFixed(0),
+      outdoorEnthalpy: result.ventilation.hOut.toFixed(2),
+      indoorEnthalpy: result.ventilation.hIn.toFixed(2),
+      enthalpyDiff: result.ventilation.deltaH.toFixed(2),
+      ventTotal: result.ventilation.total.toFixed(1),
+      ventTotalKW: (result.ventilation.total / 1000).toFixed(2),
+
+      personTotal: result.operation.person.toFixed(1),
+      lightingTotal: result.operation.lighting.toFixed(1),
+      equipmentTotal: result.operation.equipment.toFixed(1),
+      doorTotal: result.operation.door.toFixed(1),
+      operationTotal: result.operation.total.toFixed(1),
+      operationTotalKW: (result.operation.total / 1000).toFixed(2),
+
+      motorTotal: result.motor.total.toFixed(1),
+      motorTotalKW: (result.motor.total / 1000).toFixed(2),
+
+      r1: (loads[0] / 1000).toFixed(2),
+      r2: (loads[1] / 1000).toFixed(2),
+      r3: (loads[2] / 1000).toFixed(2),
+      r4: (loads[3] / 1000).toFixed(2),
+      r5: (loads[4] / 1000).toFixed(2),
+      r1p: (total > 0 ? loads[0] / total * 100 : 0).toFixed(1) + '%',
+      r2p: (total > 0 ? loads[1] / total * 100 : 0).toFixed(1) + '%',
+      r3p: (total > 0 ? loads[2] / total * 100 : 0).toFixed(1) + '%',
+      r4p: (total > 0 ? loads[3] / total * 100 : 0).toFixed(1) + '%',
+      r5p: (total > 0 ? loads[4] / total * 100 : 0).toFixed(1) + '%',
+      rTotal: result.totalKW.toFixed(2),
+      rDesign: result.designKW.toFixed(2),
+
+      barData: barData,
+
+      compressorPower: selection.compressorPower.toFixed(2),
+      suggestedCapacity: selection.suggestedCapacity.toFixed(2),
+      fanSuggestion: selection.fanCapacity.toFixed(2),
+      theoreticalCOP: selection.theoreticalCOP.toFixed(2),
+      correctedCOP: selection.correctedCOP.toFixed(2),
+      displacement: selection.displacement.toFixed(1),
+      compTypeName: selection.compressorType,
+      econDesc: selection.econDesc,
+      carnotCOP: selection.carnotCOP
+    });
+
+    // 保存结果供导出
+    this._lastResult = { params, result, selection };
+  },
+
+  // ===== 导出报告（复制到剪贴板）=====
+  exportReport() {
+    const data = this._lastResult;
+    if (!data) {
+      wx.showToast({ title: '请先完成计算', icon: 'none' });
+      return;
+    }
+
+    const { params, result, selection } = data;
+    const date = new Date().toLocaleString('zh-CN');
+    const getMatName = (key) => calc.MATERIAL_NAMES[params[key]] || params[key];
+    const roomTypeMap = { cooling: '冷藏库', freezing: '冷冻库', deepfreeze: '速冻库', constant: '恒温库', custom: '自定义' };
+
+    const report = `
+═══════════════════════════════════
+    青岛冷锋节能工程有限公司
+      冷库冷量计算报告
+═══════════════════════════════════
+生成时间：${date}
+库房名称：${params.roomName}
+库房类型：${roomTypeMap[params.roomType] || params.roomType}
+联系电话：13061468618（微信同号）
+
+一、库房基本参数
+  库房尺寸：${params.roomLength}m × ${params.roomWidth}m × ${params.roomHeight}m
+  库房容积：${(params.roomLength * params.roomWidth * params.roomHeight).toFixed(1)} m³
+  库内温度：${params.indoorTemp}℃
+  室外温度：${params.outdoorTemp}℃
+  安全系数：${params.safetyFactor}%
+
+二、围护结构保温配置
+  屋顶：${getMatName('roofMaterial')} ${params.roofThickness}mm，K=${params.roofK.toFixed(3)}
+  外墙：${getMatName('wallMaterial')} ${params.wallThickness}mm，K=${params.wallK.toFixed(3)}
+  地板：${getMatName('floorMaterial')} ${params.floorThickness}mm，K=${params.floorK.toFixed(3)}
+
+三、各项冷负荷
+  ① 围护结构：${(result.envelope.total/1000).toFixed(2)} kW
+  ② 货物冷负荷：${(result.goods.total/1000).toFixed(2)} kW
+  ③ 开门渗透：${(result.ventilation.total/1000).toFixed(2)} kW
+  ④ 操作管理：${(result.operation.total/1000).toFixed(2)} kW
+  ⑤ 电机热负荷：${(result.motor.total/1000).toFixed(2)} kW
+
+四、冷量汇总
+  计算总冷负荷：${result.totalKW.toFixed(2)} kW
+  设计冷量（含${params.safetyFactor}%安全系数）：${result.designKW.toFixed(2)} kW
+
+五、设备选型参考
+  制冷剂类型：${selection.refrigerant}
+  压缩机类型：${selection.compressorType}
+  经济器：${selection.econDesc}
+  蒸发温度：${selection.evapTemp}℃
+  冷凝温度：${selection.condTemp}℃
+  理论COP：${selection.theoreticalCOP}
+  实际COP（含工程修正）：${selection.correctedCOP}
+  压缩机轴功率：${selection.compressorPower.toFixed(2)} kW
+  压缩机排气量：${selection.displacement.toFixed(1)} m³/h
+  建议制冷量：${selection.suggestedCapacity.toFixed(2)} kW
+  冷风机建议：${selection.fanCapacity.toFixed(2)} kW
+
+═══════════════════════════════════
+  青岛冷锋节能工程有限公司
+  电话/微信：13061468618
+  专业冷库设计·安装·节能改造
+───────────────────────────────────
+  计算结果仅供参考，实际工程请由
+  专业制冷工程师审核确认。
+═══════════════════════════════════
+`;
+
+    wx.setClipboardData({
+      data: report,
+      success: () => {
+        wx.showModal({
+          title: '报告已复制',
+          content: '计算报告已复制到剪贴板，可粘贴到微信或备忘录中保存。',
+          showCancel: false
+        });
+      }
+    });
+  },
+
+  // 拨打电话
+  makeCall() {
+    wx.makePhoneCall({
+      phoneNumber: '13061468618'
+    });
+  },
+
+  // 重置参数
+  resetAll() {
+    wx.showModal({
+      title: '确认重置',
+      content: '确定要重置所有参数吗？',
+      success: (res) => {
+        if (res.confirm) {
+          wx.reLaunch({ url: '/pages/index/index' });
+        }
+      }
+    });
+  }
+});

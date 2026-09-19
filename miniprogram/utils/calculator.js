@@ -317,11 +317,18 @@ function interpolate(table, temp, key) {
 
 /**
  * 设备选型计算（含制冷剂、COP、排气量）
- * 理论COP基于卡诺循环 × 压缩机效率因子（参考Bitzer/Bock实际曲线校准）
- * 实际COP = 理论COP × 0.9（10%工程修正：电机效率、管路压降、过热损失等）
+ * 理论COP基于卡诺循环 × 压缩机效率因子
+ * 实际COP = 理论COP × 效率因子 × 经济器提升系数 × 工程修正(0.9)
+ *
+ * 效率依据：
+ * - 实际循环COP约为卡诺COP的40~60%（参考MechSimulator/西安交大实验数据）
+ * - 活塞式半封闭压缩机效率因子约0.48~0.52
+ * - 螺杆式压缩机效率因子约0.53~0.57
+ * - 经济器提升（参考Copeland/Bitzer实测数据）：
+ *   蒸发温度>-5℃：约+5%；-15~-5℃：约+10%；-25~-15℃：约+15%；<-25℃：约+20%
  */
 function calculateSelection(result, params) {
-  const { evapTemp, condTemp, refrigerant } = params;
+  const { evapTemp, condTemp, refrigerant, compressorType, hasEconomizer } = params;
   const designKW = result.designKW;
   const ref = REFRIGERANT_PROPS[refrigerant] || REFRIGERANT_PROPS.R507;
 
@@ -336,30 +343,63 @@ function calculateSelection(result, params) {
   // 单位容积制冷量
   const qv = q0 / v1; // kJ/m³
 
-  // 理论COP（卡诺循环 × 压缩机效率因子）
+  // 理论COP（卡诺循环）
   const tKelvinE = evapTemp + 273.15;
   const tKelvinC = condTemp + 273.15;
   const carnotCOP = tKelvinE / Math.max(1, tKelvinC - tKelvinE);
-  const efficiencyFactor = refrigerant === 'R22' ? 0.55 : 0.53;
+
+  // 压缩机效率因子（活塞式偏低，螺杆式偏高）
+  // R22/R507物性差异已通过焓值体现，效率因子主要区分压缩机结构
+  let efficiencyFactor;
+  if (compressorType === 'screw') {
+    efficiencyFactor = 0.55;  // 螺杆式
+  } else {
+    efficiencyFactor = 0.49;  // 活塞式（默认）
+  }
   const theoreticalCOP = carnotCOP * efficiencyFactor;
 
-  // 工程修正：理论COP × 0.9
-  const correctedCOP = theoreticalCOP * 0.9;
+  // 经济器提升系数（根据蒸发温度，越低提升越大）
+  let econBoost = 1.0;
+  let econDesc = '无经济器';
+  if (hasEconomizer) {
+    if (evapTemp >= -5) {
+      econBoost = 1.05; econDesc = '经济器(+5%)';
+    } else if (evapTemp >= -15) {
+      econBoost = 1.10; econDesc = '经济器(+10%)';
+    } else if (evapTemp >= -25) {
+      econBoost = 1.15; econDesc = '经济器(+15%)';
+    } else {
+      econBoost = 1.20; econDesc = '经济器(+20%)';
+    }
+  }
+
+  // 工程修正：× 0.9（电机效率、管路压降、过热损失等）
+  const correctedCOP = theoreticalCOP * econBoost * 0.9;
 
   // 压缩机轴功率
   const compressorPower = designKW / Math.max(0.5, correctedCOP);
 
-  // 容积效率（活塞式经验公式）
-  const volumetricEff = Math.max(0.5, 0.95 - 0.004 * (condTemp - evapTemp));
+  // 容积效率（活塞式经验公式；螺杆式容积效率较高）
+  let volumetricEff;
+  if (compressorType === 'screw') {
+    volumetricEff = Math.max(0.6, 0.98 - 0.003 * (condTemp - evapTemp));
+  } else {
+    volumetricEff = Math.max(0.5, 0.95 - 0.004 * (condTemp - evapTemp));
+  }
 
   // 压缩机理论排气量 (m³/h)
   const displacement = designKW * 3600 / (qv * volumetricEff);
 
   const fanCapacity = designKW * 1.2;
+  const compTypeName = compressorType === 'screw' ? '螺杆式' : '活塞式';
 
   return {
     evapTemp, condTemp,
     refrigerant: refrigerant || 'R507',
+    compressorType: compTypeName,
+    econDesc: econDesc,
+    carnotCOP: parseFloat(carnotCOP.toFixed(2)),
+    efficiencyFactor: efficiencyFactor,
     theoreticalCOP: parseFloat(theoreticalCOP.toFixed(2)),
     correctedCOP: parseFloat(correctedCOP.toFixed(2)),
     compressorPower: parseFloat(compressorPower.toFixed(2)),
